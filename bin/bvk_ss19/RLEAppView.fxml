@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!--
+ * BVK Ue1 SS2019 Vorgabe
+ *
+ * Copyright (C) 2018 by Klaus Jung
+ * All rights reserved.
+ * Date: 2018-03-28
+-->
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.control.TitledPane?>
+<?import javafx.scene.image.ImageView?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.ColumnConstraints?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.RowConstraints?>
+<?import javafx.scene.layout.VBox?>
+
+<BorderPane maxHeight="580.0" maxWidth="835.0" xmlns="http://javafx.com/javafx/8.0.111" xmlns:fx="http://javafx.com/fxml/1" fx:controller="bvk_ss19.RLEAppController">
+   <center>
+      <GridPane hgap="5.0" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" vgap="5.0" BorderPane.alignment="CENTER">
+         <columnConstraints>
+            <ColumnConstraints hgrow="ALWAYS" minWidth="10.0" percentWidth="50.0" />
+            <ColumnConstraints hgrow="ALWAYS" minWidth="10.0" percentWidth="50.0" />
+         </columnConstraints>
+         <rowConstraints>
+            <RowConstraints minHeight="10.0" vgrow="ALWAYS" />
+            <RowConstraints minHeight="50.0" valignment="TOP" vgrow="NEVER" />
+         </rowConstraints>
+         <children>
+            <TitledPane collapsible="false" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" text="Source Image">
+               <content>
+                  <ScrollPane maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" pannable="true">
+                     <content>
+                        <ImageView fx:id="sourceImageView" pickOnBounds="true" preserveRatio="true" smooth="false" />
+                     </content>
+                  </ScrollPane>
+               </content>
+            </TitledPane>
+            <TitledPane collapsible="false" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" text="RLE Image" GridPane.columnIndex="1">
+               <content>
+                  <ScrollPane maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" pannable="true">
+                     <content>
+                        <ImageView fx:id="rleImageView" pickOnBounds="true" preserveRatio="true" smooth="false" />
+                     </content>
+                  </ScrollPane>
+               </content>
+            </TitledPane>
+            <VBox spacing="5.0" GridPane.rowIndex="1">
+               <children>
+                  <Label fx:id="sourceInfoLabel" text="Info Label" />
+                  <HBox spacing="10.0" VBox.vgrow="NEVER">
+                     <children>
+                        <Button mnemonicParsing="false" onAction="#openImage" prefHeight="27.0" text="Open Image" />
+                        <Button mnemonicParsing="false" onAction="#saveRLEImage" text="Save RLE" />
+                     </children>
+                  </HBox>
+               </children>
+            </VBox>
+            <VBox spacing="5.0" GridPane.columnIndex="1" GridPane.rowIndex="1">
+               <children>
+                  <Label fx:id="rleInfoLabel" text="Info Label" />
+                  <Button mnemonicParsing="false" onAction="#openRLEImage" prefHeight="27.0" text="Open RLE" />
+               </children>
+            </VBox>
+         </children>
+      </GridPane>
+   </center>
+   <bottom>
+      <Label fx:id="messageLabel" minHeight="27.0" text="Message Label" BorderPane.alignment="CENTER">
+         <padding>
+            <Insets top="10.0" />
+         </padding>
+      </Label>
+   </bottom>
+   <padding>
+      <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
+   </padding>
+</BorderPane>
