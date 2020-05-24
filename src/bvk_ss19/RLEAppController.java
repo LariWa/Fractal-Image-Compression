@@ -19,7 +19,7 @@ import javafx.stage.FileChooser;
 
 public class RLEAppController {
 	
-	private static final String initialFileName = "dilbert_8.png";
+	private static final String initialFileName = "LenaGrey.png";
 	private static File fileOpenPath = new File(".");
 
 	private RasterImage sourceImage;
@@ -104,24 +104,26 @@ public class RLEAppController {
 	
 	@FXML
 	public void openRLEImage() {
-    	FileChooser fileChooser = new FileChooser();
-    	fileChooser.setInitialDirectory(fileOpenPath);
-    	fileChooser.getExtensionFilters().addAll(new FileChooser.ExtensionFilter("RLE Images (*.run)", "*.run"));
-    	File selectedFile = fileChooser.showOpenDialog(null);
-    	if(selectedFile != null) {
-    		rleImageFileSize = selectedFile.length();
-    		try {
-    			DataInputStream inputStream = new DataInputStream(new FileInputStream(selectedFile));
-    			long startTime = System.currentTimeMillis();
-    			rleImage = RLE.decodeImage(inputStream);
-    			long time = System.currentTimeMillis() - startTime;
-    			messageLabel.setText("Decoding in " + time + " ms");
-    			rleImage.setToView(rleImageView);
-    			compareImages();
-    		} catch (Exception e) {
-    			e.printStackTrace();
-    		}
-    	}
+//    	FileChooser fileChooser = new FileChooser();
+//    	fileChooser.setInitialDirectory(fileOpenPath);
+//    	fileChooser.getExtensionFilters().addAll(new FileChooser.ExtensionFilter("RLE Images (*.run)", "*.run"));
+//    	File selectedFile = fileChooser.showOpenDialog(null);
+//    	if(selectedFile != null) {
+//    		rleImageFileSize = selectedFile.length();
+//    		try {
+//    			DataInputStream inputStream = new DataInputStream(new FileInputStream(selectedFile));
+//    			long startTime = System.currentTimeMillis();
+//    			rleImage = RLE.decodeImage(inputStream);
+//    			long time = System.currentTimeMillis() - startTime;
+//    			messageLabel.setText("Decoding in " + time + " ms");
+//    			rleImage.setToView(rleImageView);
+//    			compareImages();
+//    		} catch (Exception e) {
+//    			e.printStackTrace();
+//    		}
+//    	}
+		RLE.createRangebloecke(sourceImage).setToView(rleImageView);
+
 	}
 	
 		

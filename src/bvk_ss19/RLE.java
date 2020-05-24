@@ -12,58 +12,93 @@ import java.io.IOException;
 import java.util.ArrayList;
 
 public class RLE {
-	
+
 	public static void encodeImage(RasterImage image, DataOutputStream out) throws IOException {
-		
-		// TODO: write RLE data to DataOutputStream		
+
+		// TODO: write RLE data to DataOutputStream
 		ArrayList<Integer> colors = new ArrayList<Integer>();
-		int numberOfColors=0;
-		for(int i=0; i<image.width*image.height; i++) {
-			int color= image.argb[i];		
-			if(!colors.contains(color)){
+		int numberOfColors = 0;
+		for (int i = 0; i < image.width * image.height; i++) {
+			int color = image.argb[i];
+			if (!colors.contains(color)) {
 				numberOfColors++;
 				colors.add(color);
-			}		
-		}		
+			}
+		}
 		out.writeInt(image.width);
-		out.writeInt(image.height);		
+		out.writeInt(image.height);
 		out.writeInt(numberOfColors);
-		for(int color:colors) {
+		for (int color : colors) {
 			out.writeInt(color);
 		}
-		
-		int i=0;
-		while( i<image.width*image.height) {	
-			int color= image.argb[i];	
-			int lauflaenge=0;
-			for(;i< image.width*image.height && image.argb[i]==color && lauflaenge<255; lauflaenge++, i++);			
-			out.writeByte(colors.indexOf(color));	
-			out.writeByte(lauflaenge);	
-		}
-}
 
+		int i = 0;
+		while (i < image.width * image.height) {
+			int color = image.argb[i];
+			int lauflaenge = 0;
+			for (; i < image.width * image.height && image.argb[i] == color && lauflaenge < 255; lauflaenge++, i++)
+				;
+			out.writeByte(colors.indexOf(color));
+			out.writeByte(lauflaenge);
+		}
+	}
 
 	public static RasterImage decodeImage(DataInputStream in) throws IOException {
-	
+
 		// TODO: read width and height from DataInputStream
 		int width = in.readInt();
 		int height = in.readInt();
-			
+
 		// create RasterImage to be returned
 		RasterImage image = new RasterImage(width, height);
 		int numberOfColors = in.readInt();
 		int[] colors = new int[numberOfColors];
-		for (int i=0; i<numberOfColors;i++) {
-			colors[i]= in.readInt();
-		}	
-		int i=0;
-		while(in.available()>0) {
-			int index= in.readByte() & 0xff;
+		for (int i = 0; i < numberOfColors; i++) {
+			colors[i] = in.readInt();
+		}
+		int i = 0;
+		while (in.available() > 0) {
+			int index = in.readByte() & 0xff;
 			int lauflaenge = in.readByte() & 0xff;
-			int color= colors[index];		
-			for(int j=0; j<lauflaenge; j++, i++) {
-				image.argb[i]=color;			
+			int color = colors[index];
+			for (int j = 0; j < lauflaenge; j++, i++) {
+				image.argb[i] = color;
 			}
+		}
+		return image;
+	}
+
+	public static RasterImage createRangebloecke(RasterImage base) {
+		int blockgroesse = 8;
+		int width = base.width;
+		int height = base.height;
+
+		// create RasterImage to be returned
+		RasterImage image = new RasterImage(width, height);
+		int y = 0;
+		int x;
+		for (y = 0; y < base.height; y++) {
+			for (x = 0; x < base.width; x++) {
+				int b = 0; //Summe der Grauwerte
+				int rx=0;
+				int ry;
+				
+				for (ry=0;ry < blockgroesse && y + ry < base.height; ry++) { // Rangeblöcke Grauwerte summieren
+					for (rx = 0; rx < blockgroesse && x + rx < base.width; rx++) {
+						int grey = (base.argb[x + rx + (y + ry) * base.width] >> 16) & 0xff;
+						b += grey;
+					}
+				}
+				b = b / (rx * ry); // Mittelwert
+
+				for (ry = 0; ry < blockgroesse && y + ry < base.height; ry++) { // Mittelwerte ins Bild schreiben, später im Decoder
+					for (rx = 0; rx < blockgroesse && x + rx < base.width; rx++) {
+						image.argb[x + rx + (y + ry) * base.width] = 0xff000000 | (b << 16) | (b << 8) | b;
+					}
+				}
+				x += blockgroesse - 1;
+			}
+			y += blockgroesse - 1;
 		}
 		return image;
 	}
