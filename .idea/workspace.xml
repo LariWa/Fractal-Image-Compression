@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ChangeListManager">
+    <list default="true" id="2ea256c2-4732-4862-901f-c4c4cb38cdd5" name="Default Changelist" comment="">
+      <change beforePath="$PROJECT_DIR$/bin/bvk_ss19/RLE.class" beforeDir="false" afterPath="$PROJECT_DIR$/bin/bvk_ss19/RLE.class" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/bvk_ss19/RLE.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/bvk_ss19/RLE.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/bvk_ss19/RLEAppController.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/bvk_ss19/RLEAppController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/bvk_ss19/RLEAppView.fxml" beforeDir="false" afterPath="$PROJECT_DIR$/src/bvk_ss19/RLEAppView.fxml" afterDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="CodeStyleSettingsInfer">
+    <option name="done" value="true" />
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="ProjectCodeStyleSettingsMigration">
+    <option name="version" value="1" />
+  </component>
+  <component name="ProjectId" id="1cXiD1lLvDNYxJtnEiN4T9MqEmr" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showExcludedFiles" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent">
+    <property name="RunOnceActivity.ShowReadmeOnStart" value="true" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$" />
+    <property name="settings.editor.selected.configurable" value="configurable.group.appearance" />
+  </component>
+  <component name="SbtLocalSettings">
+    <option name="projectSyncType">
+      <map>
+        <entry key="$USER_HOME$/Documents/Scala/Beleg2Aufgabe" value="PREVIEW" />
+        <entry key="$USER_HOME$/Documents/Scala/ExerciseListsBeleg" value="PREVIEW" />
+        <entry key="$USER_HOME$/Documents/Scala/Uebung1_sbt" value="PREVIEW" />
+      </map>
+    </option>
+  </component>
+  <component name="ServiceViewManager">
+    <option name="viewStates">
+      <list>
+        <serviceView>
+          <treeState>
+            <expand />
+            <select />
+          </treeState>
+        </serviceView>
+      </list>
+    </option>
+  </component>
+  <component name="SvnConfiguration">
+    <configuration />
+  </component>
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="2ea256c2-4732-4862-901f-c4c4cb38cdd5" name="Default Changelist" comment="" />
+      <created>1590681215810</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1590681215810</updated>
+    </task>
+    <servers />
+  </component>
+</project>

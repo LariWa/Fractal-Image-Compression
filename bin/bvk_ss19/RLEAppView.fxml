@@ -21,15 +21,17 @@
 <?import javafx.scene.layout.RowConstraints?>
 <?import javafx.scene.layout.VBox?>
 
-<BorderPane maxHeight="580.0" maxWidth="835.0" xmlns="http://javafx.com/javafx/8.0.111" xmlns:fx="http://javafx.com/fxml/1" fx:controller="bvk_ss19.RLEAppController">
+<BorderPane maxHeight="580.0" maxWidth="835.0" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="bvk_ss19.RLEAppController">
    <center>
       <GridPane hgap="5.0" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" vgap="5.0" BorderPane.alignment="CENTER">
          <columnConstraints>
             <ColumnConstraints hgrow="ALWAYS" minWidth="10.0" percentWidth="50.0" />
             <ColumnConstraints hgrow="ALWAYS" minWidth="10.0" percentWidth="50.0" />
+            <ColumnConstraints hgrow="ALWAYS" minWidth="10.0" percentWidth="50.0" />
          </columnConstraints>
          <rowConstraints>
             <RowConstraints minHeight="10.0" vgrow="ALWAYS" />
+            <RowConstraints minHeight="50.0" valignment="TOP" vgrow="NEVER" />
             <RowConstraints minHeight="50.0" valignment="TOP" vgrow="NEVER" />
          </rowConstraints>
          <children>
@@ -42,7 +44,7 @@
                   </ScrollPane>
                </content>
             </TitledPane>
-            <TitledPane collapsible="false" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" text="RLE Image" GridPane.columnIndex="1">
+             <TitledPane collapsible="false" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" text="Range Block Mean Value" GridPane.columnIndex="1">
                <content>
                   <ScrollPane maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" pannable="true">
                      <content>
@@ -65,6 +67,27 @@
             <VBox spacing="5.0" GridPane.columnIndex="1" GridPane.rowIndex="1">
                <children>
                   <Label fx:id="rleInfoLabel" text="Info Label" />
+                  <Button mnemonicParsing="false" onAction="#openRLEImage" prefHeight="27.0" text="Open RB" />
+               </children>
+            </VBox>
+            <VBox spacing="5.0" GridPane.columnIndex="2" GridPane.rowIndex="1">
+               <children>
+                  <Label fx:id="rleInfoLabel" text="Info Label" />
+                  <Button mnemonicParsing="false" onAction="#openDomainApprox" prefHeight="27.0" text="DB Approx." />
+             </children>
+            </VBox>
+            <TitledPane collapsible="false" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" text="Above Domain Block Approx" GridPane.columnIndex="2">
+               <content>
+                  <ScrollPane maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" pannable="true">
+                     <content>
+                        <ImageView fx:id="domainApproxImageView" pickOnBounds="true" preserveRatio="true" smooth="false" />
+                     </content>
+                  </ScrollPane>
+               </content>
+            </TitledPane>
+            <VBox spacing="5.0">
+               <children>
+                  <Label fx:id="rleInfoLabel1" text="Info Label" />
                   <Button mnemonicParsing="false" onAction="#openRLEImage" prefHeight="27.0" text="Open RLE" />
                </children>
             </VBox>

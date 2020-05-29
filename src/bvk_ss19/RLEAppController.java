@@ -39,6 +39,9 @@ public class RLEAppController {
     private ImageView rleImageView;
 
     @FXML
+    private ImageView domainApproxImageView;
+    
+    @FXML
     private Label rleInfoLabel;
 
     @FXML
@@ -126,11 +129,13 @@ public class RLEAppController {
 
 	}
 	
+	
 		
 	
 
-	
+	@FXML
+	public void openDomainApprox() {
+		RLE.domainApprox(sourceImage).setToView(domainApproxImageView);
 
-
-
+	}
 }

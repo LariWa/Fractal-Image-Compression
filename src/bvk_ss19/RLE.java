@@ -102,5 +102,39 @@ public class RLE {
 		}
 		return image;
 	}
+	
+	
+	public static RasterImage domainApprox(RasterImage input){
+		int blockgroesse = 8;
+		
+		RasterImage src = createRangebloecke(input);
+		RasterImage dst = copy(src);
+		
+		//start iterating through src image from y = blockgrosse -1 because first 
+		//line of range blocks has no blocks above it
+		for (int y = blockgroesse -1 ; y < dst.height-1; y++) {
+			for (int x = 0; x < dst.width-1; x++) {
+					dst.argb[y*dst.width+x] = 
+							src.argb[(y-blockgroesse + 1)*src.width +x];
+				}				
+			}
+		
+		return dst;
+	}
+		
+
+	/**
+	 * Method to copy a Raster image to another Raster Image
+	 * @param src
+	 * @return
+	 */
+   public static RasterImage copy(RasterImage src) {
+	    RasterImage dst = new RasterImage(src.width,src.height);
+	    
+		for (int i = 0; i < src.argb.length; i++) {
+			dst.argb[i] = src.argb[i];
+   }
+		return dst;
+}
 
 }
