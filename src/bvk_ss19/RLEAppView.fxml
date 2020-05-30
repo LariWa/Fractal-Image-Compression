@@ -80,7 +80,7 @@
                <content>
                   <ScrollPane maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" pannable="true">
                      <content>
-                        <ImageView fx:id="domainApproxImageView" pickOnBounds="true" preserveRatio="true" smooth="false" />
+                        <ImageView fx:id="rleImageView1" pickOnBounds="true" preserveRatio="true" smooth="false" />
                      </content>
                   </ScrollPane>
                </content>

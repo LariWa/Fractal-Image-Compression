@@ -103,7 +103,11 @@ public class RLE {
 		return image;
 	}
 	
-	
+	/**
+	 * 
+	 * @param input
+	 * @return
+	 */
 	public static RasterImage domainApprox(RasterImage input){
 		int blockgroesse = 8;
 		
@@ -114,15 +118,56 @@ public class RLE {
 		//line of range blocks has no blocks above it
 		for (int y = blockgroesse -1 ; y < dst.height-1; y++) {
 			for (int x = 0; x < dst.width-1; x++) {
-					dst.argb[y*dst.width+x] = 
-							src.argb[(y-blockgroesse + 1)*src.width +x];
+					dst.argb[y*dst.width+x] = src.argb[(y-blockgroesse + 1)*src.width +x];
 				}				
 			}
-		
-		return dst;
+		return adjustContrastBrightness(src,dst);
 	}
-		
+	
+	/**
+	 * 
+	 * @param domain
+	 * @param range
+	 * @return
+	 */
+	public static RasterImage adjustContrastBrightness(RasterImage domain, RasterImage range) {
+		int blockgroesse = 8;
+	
+		for (int y = 0; y < domain.height; y++) {
+			for (int x = 0; x < domain.width; x++) {
+				int domainM = 0; //Summe der Grauwerte
+				int rangeM = 0;
+			    int ry = 0;
+			    int rx = 0;
+			    
+			    int domainMin = 0;
+			    int rangeMin = 0;
+			    int sum = 0;
+			    
+			    int a = 0;
+			    int b = 0;
+			    
+				
+				for (ry=0;ry < blockgroesse && y + ry < domain.height; ry++) { // Rangeblöcke Grauwerte summieren
+					for (rx = 0; rx < blockgroesse && x + rx < domain.width; rx++) {
+						int greyD = (domain.argb[x + rx + (y + ry) * domain.width] >> 16) & 0xff;
+						domainM += greyD;
+						
+						int greyR = (range.argb[x + rx + (y + ry) * range.width] >> 16) & 0xff;
+						rangeM += greyR;
 
+					}
+				}
+				domainM = domainM / (rx * ry); // Mittelwert
+				rangeM = rangeM / (rx * ry);
+				System.out.println(domainM);
+				System.out.println(rangeM);
+
+			}}
+		return domain;
+	}
+
+			
 	/**
 	 * Method to copy a Raster image to another Raster Image
 	 * @param src

@@ -1,12 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="2ea256c2-4732-4862-901f-c4c4cb38cdd5" name="Default Changelist" comment="">
-      <change beforePath="$PROJECT_DIR$/bin/bvk_ss19/RLE.class" beforeDir="false" afterPath="$PROJECT_DIR$/bin/bvk_ss19/RLE.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/bvk_ss19/RLE.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/bvk_ss19/RLE.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/bvk_ss19/RLEAppController.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/bvk_ss19/RLEAppController.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/bvk_ss19/RLEAppView.fxml" beforeDir="false" afterPath="$PROJECT_DIR$/src/bvk_ss19/RLEAppView.fxml" afterDir="false" />
-    </list>
+    <list default="true" id="2ea256c2-4732-4862-901f-c4c4cb38cdd5" name="Default Changelist" comment="" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
