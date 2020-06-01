@@ -12,7 +12,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 
 public class RLE {
-
+	private static int blockgroesse=8;
 	public static void encodeImage(RasterImage image, DataOutputStream out) throws IOException {
 
 		// TODO: write RLE data to DataOutputStream
@@ -122,6 +122,10 @@ public class RLE {
 			}				
 		}
 		RasterImage temp = adjustContrastBrightness(src,dst);
+		//		for(int i = 0; i<200; i++) {
+		//			temp =  adjustContrastBrightness(src,temp);
+		//
+		//		}
 		return temp;
 	}
 
@@ -152,7 +156,7 @@ public class RLE {
 				}
 				domainM = domainM / (rx * ry); // Mittelwert
 				rangeM = rangeM / (rx * ry);
-				
+
 				int varianz =0;
 				int kovarianz=0;
 				for (ry=0;ry < blockgroesse && y + ry < domain.height; ry++) { // Summe Grauwert minus Mittelwert
@@ -163,13 +167,16 @@ public class RLE {
 						kovarianz+=greyD*greyD;
 					}
 				} 
-			
+
 				//Kontrast und Helligkeit
-				int a= varianz/kovarianz;
+				int a;
+				if(kovarianz==0) a=1;
+				else
+					a= varianz/kovarianz;
 				if(a==0)a=1;
 				int b = rangeM - a*domainM;				
-			
-			
+
+
 				for (ry=0;ry < blockgroesse && y + ry < range.height; ry++) { // Kontrast und Helligkeit anpassen
 					for (rx = 0; rx < blockgroesse && x + rx < range.width; rx++) {
 						int value = a*((domain.argb[x + rx + (y + ry) * domain.width] >> 16) & 0xff) -b;
@@ -183,6 +190,94 @@ public class RLE {
 			y += blockgroesse - 1;
 		}
 		return domain;
+	}
+	public static RasterImage decoder(RasterImage range) {
+
+		RasterImage start = getGreyImage(range.width, range.height);
+
+		RasterImage temp = adjustContrastBrightness(start,range);
+		for(int i = 0; i<2; i++) {
+			temp =  adjustContrastBrightness(temp,range);
+
+		}
+		return temp;	
+	}
+	public static RasterImage scaleImage(RasterImage image) {
+		//scale image
+		// create RasterImage to be returned
+		RasterImage scaled = new RasterImage(image.width/2, image.height/2);
+		int y, x;
+		int i=0;
+
+		for (y = 0; y < image.height; y+=2) {
+			for (x = 0; x < image.width; x+=2) {
+
+				//Mittelwert bestimmen
+				int mittelwert = (image.argb[x + y * image.width]>> 16) & 0xff;	
+				if(x+1>=image.width) {mittelwert+=128;}
+				else {
+					mittelwert +=(image.argb[x +1+ y * image.width]>> 16) & 0xff;	 	
+					if(y+1>=image.height) mittelwert+=128;
+					else mittelwert +=(image.argb[x + (y+1) * image.width]>> 16) & 0xff;	 		
+				}
+
+				if(y+1>=image.height) mittelwert+=128;
+				else {
+					if(x+1>=image.height)mittelwert+=128;
+					else mittelwert +=(image.argb[x+1 + (y+1) * image.width] >> 16) & 0xff;	
+				}
+
+				mittelwert =mittelwert/4;
+				scaled.argb[i]=0xff000000 | (mittelwert << 16) | (mittelwert << 8) | mittelwert;
+				i++;
+			}
+
+
+		}
+		return scaled;
+
+	}
+
+	public static int[][] createCodebuch(RasterImage image) {
+		image = scaleImage(image);
+		int abstand=4;
+		System.out.println(((image.width/blockgroesse)*2-1)*((image.height/blockgroesse)*2-1));
+		int[][] codebuch = new int[2000][64];//TODO real size
+		int i=0;
+		for (int y = 0; y < image.height; y+=abstand) {
+			for (int x = 0; x < image.width; x+=abstand) {
+				int[] codebuchblock= new int[64];
+				for (int ry=0;ry < blockgroesse && y + ry < image.height; ry++) { // Rangeblöcke Grauwerte summieren
+					for (int rx = 0; rx < blockgroesse && x + rx < image.width; rx++) {
+						codebuchblock[rx+ry*blockgroesse] = (image.argb[x+rx+(y+ry)*image.width]>>16) & 0xff;
+					}
+				}
+				codebuch[i]=codebuchblock;
+				i++;
+			}	
+		}
+		return codebuch;
+	}
+	
+	public static RasterImage showCodebuch(RasterImage image) {
+		int[][] codebuch = createCodebuch(image);
+		int i =0;
+		RasterImage codebuchImage = new RasterImage(image.width*2+image.width/4,image.height*2+image.height/4);//TODO adjust width and height
+		for (int y = 0; y < codebuchImage.height; y+=9) {
+			for (int x = 0; x < codebuchImage.width; x+=9) {
+				for (int ry=0;ry < blockgroesse && y + ry < image.height; ry++) { // Rangeblöcke Grauwerte summieren
+					for (int rx = 0; rx < blockgroesse && x + rx < image.width; rx++) {
+						int value = codebuch[i][rx+ry*blockgroesse];
+						codebuchImage.argb[x + rx + (y + ry) * codebuchImage.width] = 0xff000000 | (value << 16) | (value << 8) | value;
+					}
+					codebuchImage.argb[x + 8 + (y + ry) * codebuchImage.width] = 0xff000000 | (255 << 16) | (255 << 8) | 255;
+				}
+				
+				
+				i++;
+			}}
+			
+		return codebuchImage;
 	}
 
 
@@ -198,6 +293,14 @@ public class RLE {
 			dst.argb[i] = src.argb[i];
 		}
 		return dst;
+	}
+
+	public static RasterImage getGreyImage(int width, int height){
+		RasterImage image = new RasterImage(width, height);
+		for (int i=0; i< image.argb.length; i++) {
+			image.argb[i]= 0xff000000 | (128 << 16) | (128 << 8) | 128;
+		}
+		return image;
 	}
 
 }

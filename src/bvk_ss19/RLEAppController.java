@@ -127,8 +127,8 @@ public class RLEAppController {
 //    	}
 
       //  RLE.createRangebloecke(sourceImage).setToView(rleImageView);
-		RLE.domainApprox(sourceImage).setToView(rleImageView);
-
+		//RLE.domainApprox(sourceImage).setToView(rleImageView);
+		RLE.showCodebuch(sourceImage).setToView(rleImageView);
 	}
 	
 	
