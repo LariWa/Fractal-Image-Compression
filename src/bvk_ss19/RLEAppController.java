@@ -125,7 +125,9 @@ public class RLEAppController {
 //    			e.printStackTrace();
 //    		}
 //    	}
-		RLE.createRangebloecke(sourceImage).setToView(rleImageView);
+
+      //  RLE.createRangebloecke(sourceImage).setToView(rleImageView);
+		RLE.domainApprox(sourceImage).setToView(rleImageView);
 
 	}
 	
@@ -135,7 +137,7 @@ public class RLEAppController {
 
 	@FXML
 	public void openDomainApprox() {
-		RLE.domainApprox(sourceImage).setToView(domainApproxImageView);
+		//RLE.domainApprox(sourceImage).setToView(domainApproxImageView);
 
 	}
 }

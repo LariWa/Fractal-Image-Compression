@@ -121,7 +121,8 @@ public class RLE {
 					dst.argb[y*dst.width+x] = src.argb[(y-blockgroesse + 1)*src.width +x];
 				}				
 			}
-		return adjustContrastBrightness(src,dst);
+	     RasterImage temp = adjustContrastBrightness(src,dst);
+	     return temp;
 	}
 	
 	/**
@@ -147,6 +148,7 @@ public class RLE {
 			    int a = 0;
 			    int b = 0;
 			    
+			    
 				
 				for (ry=0;ry < blockgroesse && y + ry < domain.height; ry++) { // Rangeblöcke Grauwerte summieren
 					for (rx = 0; rx < blockgroesse && x + rx < domain.width; rx++) {
@@ -160,11 +162,64 @@ public class RLE {
 				}
 				domainM = domainM / (rx * ry); // Mittelwert
 				rangeM = rangeM / (rx * ry);
-				System.out.println(domainM);
-				System.out.println(rangeM);
+				//System.out.println(domainM);
+				//System.out.println(rangeM);
+				
+				for (ry=0;ry < blockgroesse && y + ry < domain.height; ry++) { // Rangeblöcke Grauwerte summieren
+					for (rx = 0; rx < blockgroesse && x + rx < domain.width; rx++) {
+						int greyD = ((domain.argb[x + rx + (y + ry) * domain.width] >> 16) & 0xff) - domainM;
+                        domainMin += greyD;
+                        
+						int greyR = ((range.argb[x + rx + (y + ry) * range.width] >> 16) & 0xff) - rangeM;
+						rangeMin += greyR;
 
+	}
+		} 
+				if (domainMin == 0) {
+					a = 0;
+				}
+				else {
+				a = (domainMin * rangeM)/ (domainMin * domainMin); 
+				}
+				
+				b = rangeM - a*domainM;
+				
+				for (ry=0;ry < blockgroesse && y + ry < domain.height; ry++) { // Rangeblöcke Grauwerte summieren
+					for (rx = 0; rx < blockgroesse && x + rx < domain.width; rx++) {
+						int greyD = ((domain.argb[x + rx + (y + ry) * domain.width] >> 16) & 0xff) - domainM;
+                        domainMin += greyD;
+                        
+						int greyR = ((range.argb[x + rx + (y + ry) * range.width] >> 16) & 0xff) - rangeM;
+						rangeMin += greyR;
+
+	}
+		} 
+				
+				for (ry=0;ry < blockgroesse && y + ry < domain.height; ry++) { // Rangeblöcke Grauwerte summieren
+					for (rx = 0; rx < blockgroesse && x + rx < domain.width; rx++) {
+						int greyD = ((domain.argb[x + rx + (y + ry) * domain.width] >> 16) & 0xff) - domainM;
+                        domainMin += greyD;
+                        
+						int greyR = ((range.argb[x + rx + (y + ry) * range.width] >> 16) & 0xff) - rangeM;
+						rangeMin += greyR;
+
+	}
+		} 
+				for (ry=0;ry < blockgroesse && y + ry < range.height; ry++) { // Rangeblöcke Grauwerte summieren
+					for (rx = 0; rx < blockgroesse && x + rx < range.width; rx++) {
+						sum+= ((range.argb[x + rx + (y + ry) * range.width] >> 16) & 0xff) - a*((domain.argb[x + rx + (y + ry) * domain.width] >> 16) & 0xff) -b;		                     
+	}
+		}        
+				for (ry=0;ry < blockgroesse && y + ry < range.height; ry++) { // Rangeblöcke Grauwerte summieren
+					for (rx = 0; rx < blockgroesse && x + rx < range.width; rx++) {
+						range.argb[x + rx + (y + ry) * range.width] = 0xff000000 | (sum << 16) | (sum << 8) | sum;
+
+						
+	}
+		} 
+                       
 			}}
-		return domain;
+		return range;
 	}
 
 			
