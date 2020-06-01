@@ -133,23 +133,13 @@ public class RLE {
 	 */
 	public static RasterImage adjustContrastBrightness(RasterImage domain, RasterImage range) {
 		int blockgroesse = 8;
-		int y = 0;
-		int x;
+		int y, x;
 		for (y = 0; y < domain.height; y++) {
 			for (x = 0; x < domain.width; x++) {
 				int domainM = 0; //Summe der Grauwerte
 				int rangeM = 0;
 				int ry = 0;
-				int rx = 0;
-
-				int domainMin = 0;
-				int rangeMin = 0;
-				int sum = 0;
-
-				int a = 0;
-				int b = 0;
-
-				
+				int rx = 0;		
 
 				for (ry=0;ry < blockgroesse && y + ry < domain.height; ry++) { // Rangeblöcke Grauwerte summieren für Mittelwert
 					for (rx = 0; rx < blockgroesse && x + rx < domain.width; rx++) {
@@ -158,84 +148,41 @@ public class RLE {
 
 						int greyR = (range.argb[x + rx + (y + ry) * range.width] >> 16) & 0xff;
 						rangeM += greyR;
-
 					}
 				}
 				domainM = domainM / (rx * ry); // Mittelwert
 				rangeM = rangeM / (rx * ry);
+				
 				int varianz =0;
 				int kovarianz=0;
 				for (ry=0;ry < blockgroesse && y + ry < domain.height; ry++) { // Summe Grauwert minus Mittelwert
 					for (rx = 0; rx < blockgroesse && x + rx < domain.width; rx++) {
 						int greyD = ((domain.argb[x + rx + (y + ry) * domain.width] >> 16) & 0xff) - domainM;
-						//domainMin += greyD;
-
 						int greyR = ((range.argb[x + rx + (y + ry) * range.width] >> 16) & 0xff) - rangeM;
-						//rangeMin += greyR;
 						varianz+=greyR*greyD;
 						kovarianz+=greyD*greyD;
 					}
 				} 
-//				if (domainMin == 0) {
-//					a = 1;
-//				}
-//				else {
-//					a = (domainMin * rangeMin)/ (domainMin * domainMin); 
-//				}
-//				if(kovarianz==0)kovarianz=1;
-//				if(varianz==0)varianz=1;
-				
-
-				a= varianz/kovarianz;
-				if(a==0)a=1;
-				b = rangeM - a*domainM;
-				
-				//				for (ry=0;ry < blockgroesse && y + ry < domain.height; ry++) { // Rangeblöcke Grauwerte summieren
-				//					for (rx = 0; rx < blockgroesse && x + rx < domain.width; rx++) {
-				//						int greyD = ((domain.argb[x + rx + (y + ry) * domain.width] >> 16) & 0xff) - domainM;
-				//						domainMin += greyD;
-				//
-				//						int greyR = ((range.argb[x + rx + (y + ry) * range.width] >> 16) & 0xff) - rangeM;
-				//						rangeMin += greyR;
-				//
-				//					}
-				//				} 
-				//
-				//				for (ry=0;ry < blockgroesse && y + ry < domain.height; ry++) { // Rangeblöcke Grauwerte summieren
-				//					for (rx = 0; rx < blockgroesse && x + rx < domain.width; rx++) {
-				//						int greyD = ((domain.argb[x + rx + (y + ry) * domain.width] >> 16) & 0xff) - domainM;
-				//						domainMin += greyD;
-				//
-				//						int greyR = ((range.argb[x + rx + (y + ry) * range.width] >> 16) & 0xff) - rangeM;
-				//						rangeMin += greyR;
-				//
-				//					}
-				//				} 
-				//				for (ry=0;ry < blockgroesse && y + ry < range.height; ry++) { // Rangeblöcke Grauwerte summieren
-				//					for (rx = 0; rx < blockgroesse && x + rx < range.width; rx++) {
-				//						sum+= ((range.argb[x + rx + (y + ry) * range.width] >> 16) & 0xff) - a*((domain.argb[x + rx + (y + ry) * domain.width] >> 16) & 0xff) -b;		                     
-				//					}
-				//				}     
-				
-				System.out.println(a);
 			
-				for (ry=0;ry < blockgroesse && y + ry < range.height; ry++) { // Rangeblöcke Grauwerte summieren
+				//Kontrast und Helligkeit
+				int a= varianz/kovarianz;
+				if(a==0)a=1;
+				int b = rangeM - a*domainM;				
+			
+			
+				for (ry=0;ry < blockgroesse && y + ry < range.height; ry++) { // Kontrast und Helligkeit anpassen
 					for (rx = 0; rx < blockgroesse && x + rx < range.width; rx++) {
-						int value = a*((range.argb[x + rx + (y + ry) * range.width] >> 16) & 0xff) -b;
-						if(value<0)
-							value=0;
-						else if(value>255) value =255;
-				
-						range.argb[x + rx + (y + ry) * range.width] = 0xff000000 | (value << 16) | (value << 8) | value;
-
-
+						int value = a*((domain.argb[x + rx + (y + ry) * domain.width] >> 16) & 0xff) -b;
+						if(value<0)value=0;
+						else if(value>255) value =255;				
+						domain.argb[x + rx + (y + ry) * domain.width] = 0xff000000 | (value << 16) | (value << 8) | value;
 					}
 				} 
 				x += blockgroesse - 1;
 			}
 			y += blockgroesse - 1;
 		}
-		return range;
+		return domain;
 	}
 
 
