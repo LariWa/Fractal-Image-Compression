@@ -187,6 +187,7 @@ public class RLE {
 				
 
 				a= varianz/kovarianz;
+				if(a==0)a=1;
 				b = rangeM - a*domainM;
 				
 				//				for (ry=0;ry < blockgroesse && y + ry < domain.height; ry++) { // Rangeblöcke Grauwerte summieren
@@ -214,13 +215,16 @@ public class RLE {
 				//					for (rx = 0; rx < blockgroesse && x + rx < range.width; rx++) {
 				//						sum+= ((range.argb[x + rx + (y + ry) * range.width] >> 16) & 0xff) - a*((domain.argb[x + rx + (y + ry) * domain.width] >> 16) & 0xff) -b;		                     
 				//					}
-				//				}        
+				//				}     
+				
+				System.out.println(a);
+			
 				for (ry=0;ry < blockgroesse && y + ry < range.height; ry++) { // Rangeblöcke Grauwerte summieren
 					for (rx = 0; rx < blockgroesse && x + rx < range.width; rx++) {
 						int value = a*((range.argb[x + rx + (y + ry) * range.width] >> 16) & 0xff) -b;
-//						if(value<0)
-//							value=0;
-//						else if(value>255) value =255;
+						if(value<0)
+							value=0;
+						else if(value>255) value =255;
 				
 						range.argb[x + rx + (y + ry) * range.width] = 0xff000000 | (value << 16) | (value << 8) | value;
 
