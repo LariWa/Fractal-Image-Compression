@@ -257,16 +257,6 @@ public class RLE {
 			}	
 		}
 		
-//		List<Integer> temp = new ArrayList<>();		
-//		for(int a = 0; a< codebuch.length; a++) {
-//			for (int b=0; b<codebuch[a].length; b++) {
-//                   temp.add(codebuch[a][b]);
-//		} }
-//		
-//		System.out.println(i);
-//		System.out.println(codebuch[0].length);
-//		System.out.println(codebuch.length);
-
 		return codebuch;
 	}
 	
