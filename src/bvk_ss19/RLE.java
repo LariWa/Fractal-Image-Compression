@@ -242,15 +242,13 @@ public class RLE {
 	public static int[][] createCodebuch(RasterImage image) {
 		image = scaleImage(image);
 		int abstand=2;
-		System.out.println(image.height);
-		//System.out.println(((image.width/blockgroesse)*2-1)*((image.height/blockgroesse)*2-1));
-		int[][] codebuch = new int[(image.height/2)*(image.height/2)][16];//TODO real size
+		int[][] codebuch = new int[(image.width/2)*(image.height/2)][16];
 		int i=0;
 		for (int y = 0; y < image.height; y+=abstand) {
 			for (int x = 0; x < image.width; x+=abstand) {
 				int[] codebuchblock= new int[64];
-				for (int ry=0;ry < blockgroesse && y + ry < image.height; ry++) { // Rangeblöcke Grauwerte summieren
-					for (int rx = 0; rx < blockgroesse && x + rx < image.width; rx++) {
+				for (int ry=0;ry < blockgroesse && y + blockgroesse < image.height; ry++) { // Rangeblöcke Grauwerte summieren
+					for (int rx = 0; rx < blockgroesse && x +blockgroesse < image.width; rx++) {
 						codebuchblock[rx+ry*blockgroesse] = (image.argb[x+rx+(y+ry)*image.width]>>16) & 0xff;
 					}
 				}
@@ -259,15 +257,15 @@ public class RLE {
 			}	
 		}
 		
-		List<Integer> temp = new ArrayList<>();		
-		for(int a = 0; a< codebuch.length; a++) {
-			for (int b=0; b<codebuch[a].length; b++) {
-                   temp.add(codebuch[a][b]);
-		} }
-		
-		System.out.println(i);
-		System.out.println(codebuch[0].length);
-		System.out.println(codebuch.length);
+//		List<Integer> temp = new ArrayList<>();		
+//		for(int a = 0; a< codebuch.length; a++) {
+//			for (int b=0; b<codebuch[a].length; b++) {
+//                   temp.add(codebuch[a][b]);
+//		} }
+//		
+//		System.out.println(i);
+//		System.out.println(codebuch[0].length);
+//		System.out.println(codebuch.length);
 
 		return codebuch;
 	}
@@ -275,7 +273,8 @@ public class RLE {
 	public static RasterImage showCodebuch(RasterImage image) {
 		int[][] codebuch = createCodebuch(image);
 		int i =0;
-		RasterImage codebuchImage = new RasterImage(image.width*2+image.width/4,image.height*2+image.height/4);//TODO adjust width and height
+		System.out.println(image.width);
+		RasterImage codebuchImage = new RasterImage(image.width*2+image.width/4,image.height*2+image.height/4);
 		for (int y = 0; y < codebuchImage.height; y+=9) {
 			for (int x = 0; x < codebuchImage.width; x+=9) {
 				for (int ry=0;ry < blockgroesse && y + ry < codebuchImage.height; ry++) { // Rangeblöcke Grauwerte summieren
