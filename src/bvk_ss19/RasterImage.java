@@ -30,7 +30,7 @@ public class RasterImage {
 		argb = new int[width * height];
 		Arrays.fill(argb, gray);
 	}
-	
+
 	public RasterImage(File file) {
 		// creates an RasterImage by reading the given file
 		Image image = null;
