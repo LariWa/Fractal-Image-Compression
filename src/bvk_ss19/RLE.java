@@ -130,7 +130,10 @@ public class RLE {
 	 */
 	public static RasterImage domainBlockApprox(RasterImage input) {
 		int blockgroesse = 8;
-		int domainbloecke = 60;
+		int rangebloeckePerWidth = input.width / 8;
+		int rangebloeckePerHeight = input.height / 8;
+		int domainbloeckePerWidth = rangebloeckePerWidth * 2 - 3;
+
 		int[][] codebuch = createCodebuch(input);
 		RasterImage dst = new RasterImage(input.width, input.height);
 
@@ -145,28 +148,26 @@ public class RLE {
 					yr = 1;
 				if (xr == 0)
 					xr = 1;
-				if (yr == 31)
+				if (yr == rangebloeckePerHeight - 1)
 					yr = yr - 1;
-				if (xr == 31)
+				if (xr == rangebloeckePerWidth - 1)
 					xr = xr - 1;
 				// ---------------------------------//
 
-				
-				//get domainblock index
+				// get domainblock index
 				if (xr > 1) {
 					if (yr == 0)
 						i = xr;
 					else
-						i = (xr * 2) - 2 + (yr + yr - 1) * domainbloecke;
+						i = (xr * 2) - 2 + (yr + yr - 1) * domainbloeckePerWidth;
 				} else if (xr == 1) {
 					if (yr == 0)
 						i = xr;
 					else
-						i = xr + (yr + yr - 1) * domainbloecke;
+						i = xr + (yr + yr - 1) * domainbloeckePerWidth;
 				}
-				
-				
-				for (int ry = 0; ry < blockgroesse && y + ry < dst.height; ry++) { 
+
+				for (int ry = 0; ry < blockgroesse && y + ry < dst.height; ry++) {
 					for (int rx = 0; rx < blockgroesse && x + rx < dst.width; rx++) {
 						int value = codebuch[i][rx + ry * blockgroesse];
 						dst.argb[x + rx + (y + ry) * dst.width] = 0xff000000 | (value << 16) | (value << 8) | value;
@@ -174,7 +175,7 @@ public class RLE {
 				}
 			}
 		}
-
+		// dst = adjustContrastBrightness(input, dst);
 		return dst;
 	}
 
@@ -319,12 +320,12 @@ public class RLE {
 		image = scaleImage(image);
 		System.out.println(image.width);
 		int abstand = 2;
-		int[][] codebuch = new int[(image.width / 2) * (image.height / 2) - 3][64];
+		int[][] codebuch = new int[(image.width / 2 - 3) * (image.height / 2 - 3)][64];
 		int i = 0;
 		for (int y = 0; y < image.height; y += abstand) {
 			for (int x = 0; x < image.width; x += abstand) {
 				int[] codebuchblock = new int[64];
-				if (y + blockgroesse < image.height && x + blockgroesse < image.width) {
+				if (y + blockgroesse <= image.height && x + blockgroesse <= image.width) {
 					for (int ry = 0; ry < blockgroesse; ry++) { // Rangeblöcke Grauwerte summieren
 						for (int rx = 0; rx < blockgroesse; rx++) {
 							codebuchblock[rx + ry * blockgroesse] = (image.argb[x + rx + (y + ry) * image.width] >> 16)
@@ -334,10 +335,8 @@ public class RLE {
 					codebuch[i] = codebuchblock;
 					i++;
 				}
-
 			}
-			if (y == 0)
-				System.out.println(i);
+
 		}
 		return codebuch;
 	}
