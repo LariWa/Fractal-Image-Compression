@@ -161,7 +161,7 @@ public class RLE {
 					for (int rx = 0; rx < blockgroesse && x + rx < dst.width; rx++) {
 					   
 						int value = codebuch[i][rx+ry*blockgroesse];
-						System.out.print( " " + i );
+						//System.out.print( " " + i );
 						dst.argb[x + rx + (y + ry) * dst.width] = 0xff000000 | (value << 16) | (value << 8) | value;			
 					}				
 	                }
@@ -297,23 +297,29 @@ public class RLE {
 	 * @return
 	 */
 	public static int[][] createCodebuch(RasterImage image) {
+		System.out.println(image.width);
 		image = scaleImage(image);
+		System.out.println(image.width);
 		int abstand=2;
-		int[][] codebuch = new int[(image.width/2)*(image.height/2)][64];
+		int[][] codebuch = new int[(image.width/2)*(image.height/2)-3][64];
 		int i=0;
 		for (int y = 0; y < image.height; y+=abstand) {
 			for (int x = 0; x < image.width; x+=abstand) {
 				int[] codebuchblock= new int[64];
-				for (int ry=0;ry < blockgroesse && y + blockgroesse < image.height; ry++) { // Rangeblöcke Grauwerte summieren
-					for (int rx = 0; rx < blockgroesse && x +blockgroesse < image.width; rx++) {
+				if(y + blockgroesse < image.height && x +blockgroesse < image.width) {
+				for (int ry=0;ry < blockgroesse ; ry++) { // Rangeblöcke Grauwerte summieren
+					for (int rx = 0; rx < blockgroesse; rx++) {
 						codebuchblock[rx+ry*blockgroesse] = (image.argb[x+rx+(y+ry)*image.width]>>16) & 0xff;
 					}
 				}
 				codebuch[i]=codebuchblock;
 				i++;
-			}	
+				}
+				
+			}
+			if(y==0)
+				System.out.println(i);
 		}
-		System.out.println(i);
 		return codebuch;
 	}
 	
