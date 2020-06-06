@@ -13,6 +13,10 @@ import javafx.scene.Scene;
 import javafx.scene.layout.BorderPane;
 
 
+/**
+ * @author andrea
+ *
+ */
 public class Main extends Application {
 	@Override
 	public void start(Stage primaryStage) throws Exception {
@@ -27,3 +31,6 @@ public class Main extends Application {
 		launch(args);
 	}
 }
+
+
+

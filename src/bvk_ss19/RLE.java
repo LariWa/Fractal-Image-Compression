@@ -14,6 +14,14 @@ import java.util.List;
 
 public class RLE {
 	private static int blockgroesse=8;
+	
+	
+	/**
+	 * 
+	 * @param image
+	 * @param out
+	 * @throws IOException
+	 */
 	public static void encodeImage(RasterImage image, DataOutputStream out) throws IOException {
 
 		// TODO: write RLE data to DataOutputStream
@@ -44,6 +52,12 @@ public class RLE {
 		}
 	}
 
+	/**
+	 * 
+	 * @param in
+	 * @return
+	 * @throws IOException
+	 */
 	public static RasterImage decodeImage(DataInputStream in) throws IOException {
 
 		// TODO: read width and height from DataInputStream
@@ -69,6 +83,11 @@ public class RLE {
 		return image;
 	}
 
+	/**
+	 * 
+	 * @param base
+	 * @return
+	 */
 	public static RasterImage createRangebloecke(RasterImage base) {
 		int blockgroesse = 8;
 		int width = base.width;
@@ -109,25 +128,46 @@ public class RLE {
 	 * @param input
 	 * @return
 	 */
-	public static RasterImage domainApprox(RasterImage input){
+	public static RasterImage domainBlockApprox(RasterImage input){
 		int blockgroesse = 8;
 
-		RasterImage src = input; //createRangebloecke(input);
-		RasterImage dst = copy(src);
+		int [][] codebuch = createCodebuch(input);
+		RasterImage dst = new RasterImage(input.width, input.height);
+          
+		int i=0;
+		for (int y = 0; y < dst.height; y+=blockgroesse) {
+			for (int x = 0; x < dst.width; x+=blockgroesse) {
+				if(y==0 && x==0) {
+					  i = 0;
+				}
+				else if(y==0) {
+					i = (x/4) -1;
+				}
+				
+				else if(x==0) {
+					i = ((((input.width -16)/4) + 1) * ((y-4)/4)) + 1;
+				}
+				
+				else if(dst.width-x <= 16) {
+					i = (((((input.width -16)/4) + 1) * ((y)/4) +1));
+					}
+		
+			   else
+			   {
+				    i = (((((input.width -16)/4) + 1) * ((y-4)/4) -1) + x/4 );
+			   }
+		
+				for (int ry=0;ry < blockgroesse && y + ry < dst.height; ry++) { // Rangeblöcke Grauwerte summieren
+					for (int rx = 0; rx < blockgroesse && x + rx < dst.width; rx++) {
+					   
+						int value = codebuch[i][rx+ry*blockgroesse];
+						System.out.print( " " + i );
+						dst.argb[x + rx + (y + ry) * dst.width] = 0xff000000 | (value << 16) | (value << 8) | value;			
+					}				
+	                }
+				}}
 
-		//start iterating through src image from y = blockgrosse -1 because first 
-		//line of range blocks has no blocks above it
-		for (int y = blockgroesse -1 ; y < dst.height-1; y++) {
-			for (int x = 0; x < dst.width-1; x++) {
-				dst.argb[y*dst.width+x] = src.argb[(y-blockgroesse + 1)*src.width +x];
-			}				
-		}
-		RasterImage temp = adjustContrastBrightness(src,dst);
-		//		for(int i = 0; i<200; i++) {
-		//			temp =  adjustContrastBrightness(src,temp);
-		//
-		//		}
-		return temp;
+		return dst;
 	}
 
 	/**
@@ -192,6 +232,12 @@ public class RLE {
 		}
 		return domain;
 	}
+	
+	/**
+	 * 
+	 * @param range
+	 * @return
+	 */
 	public static RasterImage decoder(RasterImage range) {
 
 		RasterImage start = getGreyImage(range.width, range.height);
@@ -203,6 +249,12 @@ public class RLE {
 		}
 		return temp;	
 	}
+	
+	/**
+	 * 
+	 * @param image
+	 * @return
+	 */
 	public static RasterImage scaleImage(RasterImage image) {
 		//scale image
 		// create RasterImage to be returned
@@ -239,10 +291,15 @@ public class RLE {
 
 	}
 
+	/**
+	 * 
+	 * @param image
+	 * @return
+	 */
 	public static int[][] createCodebuch(RasterImage image) {
 		image = scaleImage(image);
 		int abstand=2;
-		int[][] codebuch = new int[(image.width/2)*(image.height/2)][16];
+		int[][] codebuch = new int[(image.width/2)*(image.height/2)][64];
 		int i=0;
 		for (int y = 0; y < image.height; y+=abstand) {
 			for (int x = 0; x < image.width; x+=abstand) {
@@ -256,10 +313,15 @@ public class RLE {
 				i++;
 			}	
 		}
-		
+		System.out.println(i);
 		return codebuch;
 	}
 	
+	/**
+	 * 
+	 * @param image
+	 * @return
+	 */
 	public static RasterImage showCodebuch(RasterImage image) {
 		int[][] codebuch = createCodebuch(image);
 		int i =0;
@@ -290,13 +352,18 @@ public class RLE {
 	 */
 	public static RasterImage copy(RasterImage src) {
 		RasterImage dst = new RasterImage(src.width,src.height);
-
 		for (int i = 0; i < src.argb.length; i++) {
 			dst.argb[i] = src.argb[i];
 		}
 		return dst;
 	}
 
+	/**
+	 * 
+	 * @param width
+	 * @param height
+	 * @return
+	 */
 	public static RasterImage getGreyImage(int width, int height){
 		RasterImage image = new RasterImage(width, height);
 		for (int i=0; i< image.argb.length; i++) {

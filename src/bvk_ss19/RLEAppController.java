@@ -136,8 +136,8 @@ public class RLEAppController {
 
 	@FXML
 	public void openDomainApprox() {
-		//RLE.domainApprox(sourceImage).setToView(domainApproxImageView);
-		RLE.showCodebuch(sourceImage).setToView(domainApproxImageView);
+		// RLE.showCodebuch(sourceImage).setToView(domainApproxImageView);
+		RLE.domainBlockApprox(sourceImage).setToView(domainApproxImageView);
 
 
 	}
