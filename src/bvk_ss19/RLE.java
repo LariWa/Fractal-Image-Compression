@@ -180,7 +180,7 @@ public class RLE {
 				
 			}
 		
-			error = (1 / (blockgroesse * blockgroesse)) * error;
+			System.out.println(error);
 			if (error < smallestError) {
 				smallestError = error;
 				bestBlock = blockAdjusted;
