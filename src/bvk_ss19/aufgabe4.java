@@ -21,6 +21,67 @@ public class RLE {
 	 * @param out
 	 * @throws IOException
 	 */
+	public static void encodeImage(RasterImage image, DataOutputStream out) throws IOException {
+
+		// TODO: write RLE data to DataOutputStream
+		ArrayList<Integer> colors = new ArrayList<Integer>();
+		int numberOfColors = 0;
+		for (int i = 0; i < image.width * image.height; i++) {
+			int color = image.argb[i];
+			if (!colors.contains(color)) {
+				numberOfColors++;
+				colors.add(color);
+			}
+		}
+		out.writeInt(image.width);
+		out.writeInt(image.height);
+		out.writeInt(numberOfColors);
+		for (int color : colors) {
+			out.writeInt(color);
+		}
+
+		int i = 0;
+		while (i < image.width * image.height) {
+			int color = image.argb[i];
+			int lauflaenge = 0;
+			for (; i < image.width * image.height && image.argb[i] == color && lauflaenge < 255; lauflaenge++, i++)
+				;
+			out.writeByte(colors.indexOf(color));
+			out.writeByte(lauflaenge);
+		}
+	}
+
+	/**
+	 * 
+	 * @param in
+	 * @return
+	 * @throws IOException
+	 */
+	public static RasterImage decodeImage(DataInputStream in) throws IOException {
+
+		// TODO: read width and height from DataInputStream
+		int width = in.readInt();
+		int height = in.readInt();
+
+		// create RasterImage to be returned
+		RasterImage image = new RasterImage(width, height);
+		int numberOfColors = in.readInt();
+		int[] colors = new int[numberOfColors];
+		for (int i = 0; i < numberOfColors; i++) {
+			colors[i] = in.readInt();
+		}
+		int i = 0;
+		while (in.available() > 0) {
+			int index = in.readByte() & 0xff;
+			int lauflaenge = in.readByte() & 0xff;
+			int color = colors[index];
+			for (int j = 0; j < lauflaenge; j++, i++) {
+				image.argb[i] = color;
+			}
+		}
+		return image;
+	}
+
 	/**
 	 * 
 	 * @param base
@@ -107,18 +168,19 @@ public class RLE {
 						i = xr + (yr + yr - 1) * domainbloeckePerWidth;
 				}
 
-				
-				//create domainblock kernel
-				int widthKernel = 3;
-				int dy = (int) (i / domainbloeckePerWidth)-widthKernel / 2;
-				int dx = i % domainbloeckePerWidth -widthKernel / 2;
-				if(dx<0)dx=0;
-				if(dy<0)dy=0;
-				if (dx + widthKernel >= domainbloeckePerWidth)
-					dx = domainbloeckePerWidth - widthKernel;
-				if (dy + widthKernel >= domainbloeckePerHeight)
-					dy = domainbloeckePerHeight  - widthKernel ;
+				int widthKernel = 5;
 
+				int dy = (int) (i / domainbloeckePerWidth);
+				int dx = i % domainbloeckePerWidth;
+
+				if (dx == 0)
+					dx = widthKernel / 2;
+				if (dy == 0)
+					dy = widthKernel / 2;
+				if (dx + widthKernel >= domainbloeckePerWidth)
+					dx = domainbloeckePerWidth - 3 - widthKernel / 2;
+				if (dy + widthKernel >= domainbloeckePerHeight)
+					dy = domainbloeckePerHeight - 3 - widthKernel / 2;
 				int[][] domainKernel = new int[widthKernel * widthKernel][blockgroesse * blockgroesse];
 				int n = 0;
 				for (int ky = 0; ky < widthKernel; ky++) {
@@ -127,22 +189,28 @@ public class RLE {
 						domainKernel[n] = codebuch[index];
 						n++;
 					}
+
 				}
+				i = getBestDomainblock(domainKernel, getRangeblock(x, y, input));
 				
-				int[] domainblock= getBestDomainblock(domainKernel, getRangeblock(x, y, input));
-
-
+				//TODO index ist vom kernel nicht vom codebuch --> umrechnen
+				System.out.println(i);
 				for (int ry = 0; ry < blockgroesse && y + ry < dst.height; ry++) {
 					for (int rx = 0; rx < blockgroesse && x + rx < dst.width; rx++) {
-						int value = domainblock[rx + ry * blockgroesse];
+						int value = codebuch[i][rx + ry * blockgroesse];
 						dst.argb[x + rx + (y + ry) * dst.width] = 0xff000000 | (value << 16) | (value << 8) | value;
 					}
 				}
 			}
 		}
+//		dst = adjustContrastBrightness(dst, input);
 		return dst;
 	}
 
+	public static int[] getDomainblockKernel() {
+		return null;
+
+	}
 
 	public static int[] getRangeblock(int x, int y, RasterImage image) {
 		int[] rangeblock = new int[blockgroesse * blockgroesse];
@@ -161,29 +229,32 @@ public class RLE {
 
 	}
 
-	public static int[] getBestDomainblock(int[][] domainblocks, int[] rangeblock) {
+	public static int getBestDomainblock(int[][] domainblocks, int[] rangeblock) {
 		float smallestError = 10000000;
-		int[] bestBlock= new int[blockgroesse*blockgroesse];
+		int bestBlock = 0;
 		for (int i = 0; i < domainblocks.length; i++) {
 			float[] ab = getContrastAndBrightness(domainblocks[i], rangeblock);
 			float error = 0;
-			int[] blockAdjusted= new int[blockgroesse*blockgroesse];
 
 			for (int j = 0; j < blockgroesse * blockgroesse; j++) { // Kontrast und Helligkeit anpassen
-				int domainValue = (int) (ab[0] * domainblocks[i][j] - ab[1]);
-				if (domainValue < 0)
-					domainValue = 0;
-				else if (domainValue > 255)
-					domainValue = 255;
-				error += (rangeblock[j] - domainValue) * (rangeblock[j] - domainValue);
-				blockAdjusted[j]=domainValue;
 				
+				int value = (int) (ab[0] * domainblocks[i][j] - ab[1]);
+				if (value < 0)
+					value = 0;
+				else if (value > 255)
+					value = 255;
+				domainblocks[i][j] = value;
+				System.out.println(rangeblock[i] - domainblocks[i][j]);
+
+				error += (rangeblock[i] - domainblocks[i][j]) * (rangeblock[j] - domainblocks[i][j]);
+
 			}
-		
+			//System.out.println(error);
+
 			error = (1 / (blockgroesse * blockgroesse)) * error;
 			if (error < smallestError) {
 				smallestError = error;
-				bestBlock = blockAdjusted;
+				bestBlock = i;
 			}			
 		}
 		return bestBlock;
@@ -253,17 +324,16 @@ public class RLE {
 				for (ry = 0; ry < blockgroesse && y + ry < range.height; ry++) { // Kontrast und Helligkeit anpassen
 					for (rx = 0; rx < blockgroesse && x + rx < range.width; rx++) {
 						int value = (int) (a * ((domain.argb[x + rx + (y + ry) * domain.width] >> 16) & 0xff) - b);
-						 if (value < 0)
-						 value = 0;
-						 else if (value > 255)
-						 value = 255;
+						// if (value < 0)
+						// value = 0;
+						// else if (value > 255)
+						// value = 255;
 						domain.argb[x + rx + (y + ry) * domain.width] = 0xff000000 | (value << 16) | (value << 8)
 								| value;
 					}
 				}
-				x += blockgroesse - 1;			
+				x += blockgroesse - 1;
 			}
-			
 			y += blockgroesse - 1;
 		}
 		return domain;
