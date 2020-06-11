@@ -14,9 +14,9 @@ import java.util.HashMap;
 import java.util.List;
 
 public class RLE {
-	
+
 	private static int blockgroesse = 8;
-	
+	private static float[][] imageInfo;
 
 	/**
 	 * 
@@ -58,7 +58,7 @@ public class RLE {
 		}
 		return image;
 	}
-	
+
 	/**
 	 * 
 	 * @param input
@@ -67,12 +67,12 @@ public class RLE {
 	public static HashMap<Integer, float[]> domainBlockApproxAufgabe2(RasterImage input) {
 		HashMap<Integer, float[]> indexToAB = new HashMap<Integer, float[]>();
 		int rangeBlockIndex = 0;
-		
+
 		int blockgroesse = 8;
 		int rangebloeckePerWidth = input.width / 8;
 		int rangebloeckePerHeight = input.height / 8;
 		int domainbloeckePerWidth = rangebloeckePerWidth * 2 - 3;
-		
+
 		int domainbloeckePerHeight = rangebloeckePerHeight * 2 - 3;
 
 
@@ -108,24 +108,18 @@ public class RLE {
 					else
 						i = xr + (yr + yr - 1) * domainbloeckePerWidth;
 				}
-				
+
 				//System.out.println(i);
 				float[] ab=  getContrastAndBrightness(codebuch[i], getRangeblock(x, y, input));
 				indexToAB.put(rangeBlockIndex, ab);
 				rangeBlockIndex++;
-		}}
-		
+			}}
+
 		return indexToAB;
 	}
-	
 
 
-	/**
-	 * 
-	 * @param input
-	 * @return
-	 */
-	public static RasterImage domainBlockApprox(RasterImage input) {
+	public static RasterImage encode(RasterImage input) {
 		int blockgroesse = 8;
 		int rangebloeckePerWidth = input.width / 8;
 		int rangebloeckePerHeight = input.height / 8;
@@ -136,6 +130,8 @@ public class RLE {
 		RasterImage dst = new RasterImage(input.width, input.height);
 
 		int i = 0;
+		int j=0;
+		imageInfo= new float[input.argb.length][3];
 		for (int y = 0; y < dst.height; y += blockgroesse) {
 			for (int x = 0; x < dst.width; x += blockgroesse) {
 				int xr = x / 8;
@@ -165,9 +161,9 @@ public class RLE {
 						i = xr + (yr + yr - 1) * domainbloeckePerWidth;
 				}
 
-				
+
 				//create domainblock kernel
-				int widthKernel = 3;
+				int widthKernel = 5;
 				int dy = (int) (i / domainbloeckePerWidth)-widthKernel / 2;
 				int dx = i % domainbloeckePerWidth -widthKernel / 2;
 				if(dx<0)dx=0;
@@ -186,20 +182,107 @@ public class RLE {
 						n++;
 					}
 				}
-				
-				int[] domainblock= getBestDomainblock(domainKernel, getRangeblock(x, y, input));
+				imageInfo[j] = getBestDomainblock(domainKernel, getRangeblock(x, y, input));
 
+				int yd = (int) (imageInfo[j][0] / widthKernel);
+				int xd = (int) (imageInfo[j][0] % widthKernel);
+				int di = xd+dx+(yd+dy)*domainbloeckePerWidth;
+				imageInfo[j][0]= di;
+				j++;
 
 				for (int ry = 0; ry < blockgroesse && y + ry < dst.height; ry++) {
 					for (int rx = 0; rx < blockgroesse && x + rx < dst.width; rx++) {
-						int value = domainblock[rx + ry * blockgroesse];
+						int value = codebuch[i][rx + ry * blockgroesse];
 						dst.argb[x + rx + (y + ry) * dst.width] = 0xff000000 | (value << 16) | (value << 8) | value;
 					}
 				}
 			}
 		}
+		//	dst = adjustContrastBrightness(dst, input);
 		return dst;
 	}
+
+
+	/**
+	 * 
+	 * @param input
+	 * @return
+	 */
+	//	public static RasterImage domainBlockApprox(RasterImage input) {
+	//		int blockgroesse = 8;
+	//		int rangebloeckePerWidth = input.width / 8;
+	//		int rangebloeckePerHeight = input.height / 8;
+	//		int domainbloeckePerWidth = rangebloeckePerWidth * 2 - 3;
+	//		int domainbloeckePerHeight = rangebloeckePerHeight * 2 - 3;
+	//
+	//		int[][] codebuch = createCodebuch(input);
+	//		RasterImage dst = new RasterImage(input.width, input.height);
+	//
+	//		int i = 0;
+	//		for (int y = 0; y < dst.height; y += blockgroesse) {
+	//			for (int x = 0; x < dst.width; x += blockgroesse) {
+	//				int xr = x / 8;
+	//				int yr = y / 8;
+	//
+	//				// Randbehandlung -------------------//
+	//				if (yr == 0)
+	//					yr = 1;
+	//				if (xr == 0)
+	//					xr = 1;
+	//				if (yr == rangebloeckePerHeight - 1)
+	//					yr = yr - 1;
+	//				if (xr == rangebloeckePerWidth - 1)
+	//					xr = xr - 1;
+	//				// ---------------------------------//
+	//
+	//				// get domainblock index von Domainblock über Rangeblock
+	//				if (xr > 1) {
+	//					if (yr == 0)
+	//						i = xr;
+	//					else
+	//						i = (xr * 2) - 2 + (yr + yr - 1) * domainbloeckePerWidth;
+	//				} else if (xr == 1) {
+	//					if (yr == 0)
+	//						i = xr;
+	//					else
+	//						i = xr + (yr + yr - 1) * domainbloeckePerWidth;
+	//				}
+	//
+	//				
+	//				//create domainblock kernel
+	//				int widthKernel = 3;
+	//				int dy = (int) (i / domainbloeckePerWidth)-widthKernel / 2;
+	//				int dx = i % domainbloeckePerWidth -widthKernel / 2;
+	//				if(dx<0)dx=0;
+	//				if(dy<0)dy=0;
+	//				if (dx + widthKernel >= domainbloeckePerWidth)
+	//					dx = domainbloeckePerWidth - widthKernel;
+	//				if (dy + widthKernel >= domainbloeckePerHeight)
+	//					dy = domainbloeckePerHeight  - widthKernel ;
+	//
+	//				int[][] domainKernel = new int[widthKernel * widthKernel][blockgroesse * blockgroesse];
+	//				int n = 0;
+	//				for (int ky = 0; ky < widthKernel; ky++) {
+	//					for (int kx = 0; kx < widthKernel; kx++) {
+	//						int index = dx + kx + (dy + ky) * domainbloeckePerWidth;
+	//						domainKernel[n] = codebuch[index];
+	//						n++;
+	//					}
+	//				}
+	//				
+	//				//int[] domainblock= getBestDomainblock(domainKernel, getRangeblock(x, y, input));
+	//
+	//
+	//				for (int ry = 0; ry < blockgroesse && y + ry < dst.height; ry++) {
+	//					for (int rx = 0; rx < blockgroesse && x + rx < dst.width; rx++) {
+	//						int value = domainblock[rx + ry * blockgroesse];
+	//						dst.argb[x + rx + (y + ry) * dst.width] = 0xff000000 | (value << 16) | (value << 8) | value;
+	//					}
+	//				}
+	//			}
+	//		}
+	//		return dst;
+	//	}
 
 
 	public static int[] getRangeblock(int x, int y, RasterImage image) {
@@ -219,9 +302,10 @@ public class RLE {
 
 	}
 
-	public static int[] getBestDomainblock(int[][] domainblocks, int[] rangeblock) {
+
+	public static float[] getBestDomainblock(int[][] domainblocks, int[] rangeblock) {
 		float smallestError = 10000000;
-		int[] bestBlock= new int[blockgroesse*blockgroesse];
+		float[]  bestBlock= {0,0,0};
 		for (int i = 0; i < domainblocks.length; i++) {
 			float[] ab = getContrastAndBrightness(domainblocks[i], rangeblock);
 			float error = 0;
@@ -235,25 +319,26 @@ public class RLE {
 					domainValue = 255;
 				error += (rangeblock[j] - domainValue) * (rangeblock[j] - domainValue);
 				blockAdjusted[j]=domainValue;
-				
+
 			}
-		
-			System.out.println(error);
+
 			if (error < smallestError) {
 				smallestError = error;
-				bestBlock = blockAdjusted;
+				float[] temp = {i, ab[0], ab[1]};
+				bestBlock=temp;
 			}			
 		}
+
 		return bestBlock;
 	}
 
 
 
-/*	
+	/*	
 	public static RasterImage adjustContrastBrightness(RasterImage domain, RasterImage range) {
 		int blockgroesse = 8;
 		int y, x;
-		
+
 		for (y = 0; y < range.height; y++) {
 			for (x = 0; x < range.width; x++) {
 				int domainM = 0; // Summe der Grauwerte
@@ -264,7 +349,7 @@ public class RLE {
 				int n = 0;
 				int rangeBlockIndex = 0;
 				float[] ab = getContrastAndBrightness();
-			
+
 				int[][] domainKernel = new int[widthKernel * widthKernel][blockgroesse * blockgroesse];
 				int n = 0;
 				for (int ky = 0; ky < widthKernel; ky++) {
@@ -274,7 +359,7 @@ public class RLE {
 						n++;
 					}
 				}
-				
+
 				int[] domainblock= getBestDomainblock(domainKernel, getRangeblock(x, y, input));
 
 
@@ -329,80 +414,32 @@ public class RLE {
 	 * @param range
 	 * @return
 	 */
-	public static RasterImage decoder(RasterImage decodingImage) {
+	public static RasterImage decoder() {
 
-		RasterImage start = getGreyImage(decodingImage.width, decodingImage.height);
-			
-	    HashMap<Integer,float[]> rangeBlockIndexToAB = domainBlockApproxAufgabe2(decodingImage);
-		System.out.println(rangeBlockIndexToAB.size());
+		RasterImage start = getGreyImage(256,256); //TODO width, height übertragen
 
-		rangeBlockIndexToAB.entrySet().forEach(entry->{
-			    System.out.println(entry.getKey() + " " + entry.getValue());  
-			 });
-		
-		int[][] codebuch = createCodebuch(start);
-		
-		int rangebloeckePerWidth = decodingImage.width / 8;
-		int rangebloeckePerHeight = decodingImage.height / 8;
-		int domainbloeckePerWidth = rangebloeckePerWidth * 2 - 3;
-
-
-		int i = 0;
-		
-		int rangeblockIndex = 0;
-		
+		int[][] codebuch = createCodebuch(start);	
+		int i = 0;				
 		for(int y=0; y< start.height; y+=blockgroesse) {
-			for(int x=0; x<start.width; x+=blockgroesse) {
-				
-				int xr = x / 8;
-				int yr = y / 8;
-				
-				if (yr == 0)
-					yr = 1;
-				if (xr == 0)
-					xr = 1;
-				if (yr == rangebloeckePerHeight - 1)
-					yr = yr - 1;
-				if (xr == rangebloeckePerWidth - 1)
-					xr = xr - 1;
-				// ---------------------------------//
-
-				// get domainblock index
-				if (xr > 1) {
-					if (yr == 0)
-						i = xr;
-					else
-						i = (xr * 2) - 2 + (yr + yr - 1) * domainbloeckePerWidth;
-				} else if (xr == 1) {
-					if (yr == 0)
-						i = xr;
-					else
-						i = xr + (yr + yr - 1) * domainbloeckePerWidth;
-				}
-
+			for(int x=0; x<start.width; x+=blockgroesse) {				
 				for (int ry = 0; ry < blockgroesse && y + ry < start.height; ry++) {
 					for (int rx = 0; rx < blockgroesse && x + rx < start.width; rx++) {
-						
-						float[] ab = rangeBlockIndexToAB.get(rangeblockIndex);
-                         
-						int value = (int)(ab[0]*
-								codebuch[i]
-								[rx + ry * blockgroesse] + ab[1]);
-						
+						int value = codebuch[(int) imageInfo[i][0]][rx + ry * blockgroesse];
+						value = (int) (imageInfo[i][1]*value+ imageInfo[i][2]);						
 						if (value < 0)
 							value = 0;
 						else if (value > 255)
 							value = 255;
-						
+
 						start.argb[x + rx + (y + ry) * start.width] = 0xff000000 | (value << 16) | (value << 8) | value;
 					}
 				}
-				rangeblockIndex++;
-				
+				i++;
+
 			}
 		}
 		return start;
-		
+
 	}
 
 	/**
@@ -537,5 +574,7 @@ public class RLE {
 		}
 		return image;
 	}
+
+
 
 }
