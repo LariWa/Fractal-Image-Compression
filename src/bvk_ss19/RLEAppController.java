@@ -85,24 +85,29 @@ public class RLEAppController {
 		rleInfoLabel.setText(String.format("MSE = %.1f", mse));
 	}
 	
+//	@FXML
+//	public void saveRLEImage() {
+//    	FileChooser fileChooser = new FileChooser();
+//    	fileChooser.setInitialDirectory(fileOpenPath);
+//    	fileChooser.setInitialFileName(sourceFileName.substring(0, sourceFileName.lastIndexOf('.')) + ".run");
+//    	fileChooser.getExtensionFilters().addAll(new FileChooser.ExtensionFilter("RLE Images (*.run)", "*.run"));
+//    	File selectedFile = fileChooser.showSaveDialog(null);
+//    	if(selectedFile != null) {
+//    		try {
+//    			DataOutputStream ouputStream = new DataOutputStream(new FileOutputStream(selectedFile));
+//    			long startTime = System.currentTimeMillis();
+//    			RLE.encodeImage(sourceImage, ouputStream);
+//    			long time = System.currentTimeMillis() - startTime;
+//    			messageLabel.setText("Encoding in " + time + " ms");
+//    		} catch (Exception e) {
+//    			e.printStackTrace();
+//    		}
+//    	}
+//	}
+	
 	@FXML
 	public void saveRLEImage() {
-    	FileChooser fileChooser = new FileChooser();
-    	fileChooser.setInitialDirectory(fileOpenPath);
-    	fileChooser.setInitialFileName(sourceFileName.substring(0, sourceFileName.lastIndexOf('.')) + ".run");
-    	fileChooser.getExtensionFilters().addAll(new FileChooser.ExtensionFilter("RLE Images (*.run)", "*.run"));
-    	File selectedFile = fileChooser.showSaveDialog(null);
-    	if(selectedFile != null) {
-    		try {
-    			DataOutputStream ouputStream = new DataOutputStream(new FileOutputStream(selectedFile));
-    			long startTime = System.currentTimeMillis();
-    			RLE.encodeImage(sourceImage, ouputStream);
-    			long time = System.currentTimeMillis() - startTime;
-    			messageLabel.setText("Encoding in " + time + " ms");
-    		} catch (Exception e) {
-    			e.printStackTrace();
-    		}
-    	}
+		RLE.decoder(sourceImage);
 	}
 	
 	@FXML
@@ -125,7 +130,6 @@ public class RLEAppController {
 //    			e.printStackTrace();
 //    		}
 //    	}
-
         RLE.createRangebloecke(sourceImage).setToView(rleImageView);
 		//RLE.domainApprox(sourceImage).setToView(rleImageView);
 	}
@@ -136,9 +140,9 @@ public class RLEAppController {
 
 	@FXML
 	public void openDomainApprox() {
+		 RLE.decoder(sourceImage).setToView(domainApproxImageView);
+	    //RLE.domainBlockApproxAufgabe2(sourceImage).setToView(domainApproxImageView);
 		// RLE.showCodebuch(sourceImage).setToView(domainApproxImageView);
-		RLE.domainBlockApprox(sourceImage).setToView(domainApproxImageView);
-
-
+		// RLE.domainBlockApprox(sourceImage).setToView(domainApproxImageView);
 	}
 }
