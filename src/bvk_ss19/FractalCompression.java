@@ -6,25 +6,19 @@
 
 package bvk_ss19;
 
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
 
-public class RLE {
+public class FractalCompression {
 
 	private static int blockgroesse = 8;
 	private static float[][] imageInfo;
 
 	/**
-	 * 
-	 * @param base
-	 * @return
+	 * Takes an image and splits it in range blocks, 
+	 * after wards
+	 * @param base RasterImage to be processed
+	 * @return RasterImage split into range blocks
 	 */
-	public static RasterImage createRangebloecke(RasterImage base) {
-		int blockgroesse = 8;
+	static RasterImage createRangebloecke(RasterImage base) {
 		int width = base.width;
 		int height = base.height;
 
@@ -34,22 +28,22 @@ public class RLE {
 		int x;
 		for (y = 0; y < base.height; y++) {
 			for (x = 0; x < base.width; x++) {
-				int b = 0; // Summe der Grauwerte
+				int sum = 0; // Summe der Grauwerte
 				int rx = 0;
 				int ry;
 
 				for (ry = 0; ry < blockgroesse && y + ry < base.height; ry++) { // Rangeblöcke Grauwerte summieren
 					for (rx = 0; rx < blockgroesse && x + rx < base.width; rx++) {
 						int grey = (base.argb[x + rx + (y + ry) * base.width] >> 16) & 0xff;
-						b += grey;
+						sum += grey;
 					}
 				}
-				b = b / (rx * ry); // Mittelwert
+				sum = sum / (rx * ry); // Mittelwert
 
 				for (ry = 0; ry < blockgroesse && y + ry < base.height; ry++) { // Mittelwerte ins Bild schreiben,
 					// später im Decoder
 					for (rx = 0; rx < blockgroesse && x + rx < base.width; rx++) {
-						image.argb[x + rx + (y + ry) * base.width] = 0xff000000 | (b << 16) | (b << 8) | b;
+						image.argb[x + rx + (y + ry) * base.width] = 0xff000000 | (sum << 16) | (sum << 8) | sum;
 					}
 				}
 				x += blockgroesse - 1;
@@ -59,70 +53,16 @@ public class RLE {
 		return image;
 	}
 
-	/**
-	 * 
-	 * @param input
-	 * @return
-	 */
-	public static HashMap<Integer, float[]> domainBlockApproxAufgabe2(RasterImage input) {
-		HashMap<Integer, float[]> indexToAB = new HashMap<Integer, float[]>();
-		int rangeBlockIndex = 0;
 
-		int blockgroesse = 8;
-		int rangebloeckePerWidth = input.width / 8;
-		int rangebloeckePerHeight = input.height / 8;
-		int domainbloeckePerWidth = rangebloeckePerWidth * 2 - 3;
-
-		int domainbloeckePerHeight = rangebloeckePerHeight * 2 - 3;
-
-
-		int[][] codebuch = createCodebuch(input);
-		RasterImage dst = new RasterImage(input.width, input.height);
-
-		int i = 0;
-		for (int y = 0; y < dst.height; y += blockgroesse) {
-			for (int x = 0; x < dst.width; x += blockgroesse) {
-				int xr = x / 8;
-				int yr = y / 8;
-
-				// Randbehandlung -------------------//
-				if (yr == 0)
-					yr = 1;
-				if (xr == 0)
-					xr = 1;
-				if (yr == rangebloeckePerHeight - 1)
-					yr = yr - 1;
-				if (xr == rangebloeckePerWidth - 1)
-					xr = xr - 1;
-				// ---------------------------------//
-
-				// get domainblock index
-				if (xr > 1) {
-					if (yr == 0)
-						i = xr;
-					else
-						i = (xr * 2) - 2 + (yr + yr - 1) * domainbloeckePerWidth;
-				} else if (xr == 1) {
-					if (yr == 0)
-						i = xr;
-					else
-						i = xr + (yr + yr - 1) * domainbloeckePerWidth;
-				}
-
-				//System.out.println(i);
-				float[] ab=  getContrastAndBrightness(codebuch[i], getRangeblock(x, y, input));
-				indexToAB.put(rangeBlockIndex, ab);
-				rangeBlockIndex++;
-			}}
-
-		return indexToAB;
-	}
-
-
+   /**
+    * Applies fractal image compression to a given RasterImage.
+    * 
+    * @param input RasterImage to be processed
+    * @return compressed RasterImage
+    */
 	public static RasterImage encode(RasterImage input) {
-		int blockgroesse = 8;
-		int rangebloeckePerWidth = input.width / 8;
-		int rangebloeckePerHeight = input.height / 8;
+		int rangebloeckePerWidth = input.width / blockgroesse;
+		int rangebloeckePerHeight = input.height / blockgroesse;
 		int domainbloeckePerWidth = rangebloeckePerWidth * 2 - 3;
 		int domainbloeckePerHeight = rangebloeckePerHeight * 2 - 3;
 
@@ -198,94 +138,18 @@ public class RLE {
 				}
 			}
 		}
-		//	dst = adjustContrastBrightness(dst, input);
 		return dst;
 	}
 
-
-	/**
-	 * 
-	 * @param input
-	 * @return
-	 */
-	//	public static RasterImage domainBlockApprox(RasterImage input) {
-	//		int blockgroesse = 8;
-	//		int rangebloeckePerWidth = input.width / 8;
-	//		int rangebloeckePerHeight = input.height / 8;
-	//		int domainbloeckePerWidth = rangebloeckePerWidth * 2 - 3;
-	//		int domainbloeckePerHeight = rangebloeckePerHeight * 2 - 3;
-	//
-	//		int[][] codebuch = createCodebuch(input);
-	//		RasterImage dst = new RasterImage(input.width, input.height);
-	//
-	//		int i = 0;
-	//		for (int y = 0; y < dst.height; y += blockgroesse) {
-	//			for (int x = 0; x < dst.width; x += blockgroesse) {
-	//				int xr = x / 8;
-	//				int yr = y / 8;
-	//
-	//				// Randbehandlung -------------------//
-	//				if (yr == 0)
-	//					yr = 1;
-	//				if (xr == 0)
-	//					xr = 1;
-	//				if (yr == rangebloeckePerHeight - 1)
-	//					yr = yr - 1;
-	//				if (xr == rangebloeckePerWidth - 1)
-	//					xr = xr - 1;
-	//				// ---------------------------------//
-	//
-	//				// get domainblock index von Domainblock über Rangeblock
-	//				if (xr > 1) {
-	//					if (yr == 0)
-	//						i = xr;
-	//					else
-	//						i = (xr * 2) - 2 + (yr + yr - 1) * domainbloeckePerWidth;
-	//				} else if (xr == 1) {
-	//					if (yr == 0)
-	//						i = xr;
-	//					else
-	//						i = xr + (yr + yr - 1) * domainbloeckePerWidth;
-	//				}
-	//
-	//				
-	//				//create domainblock kernel
-	//				int widthKernel = 3;
-	//				int dy = (int) (i / domainbloeckePerWidth)-widthKernel / 2;
-	//				int dx = i % domainbloeckePerWidth -widthKernel / 2;
-	//				if(dx<0)dx=0;
-	//				if(dy<0)dy=0;
-	//				if (dx + widthKernel >= domainbloeckePerWidth)
-	//					dx = domainbloeckePerWidth - widthKernel;
-	//				if (dy + widthKernel >= domainbloeckePerHeight)
-	//					dy = domainbloeckePerHeight  - widthKernel ;
-	//
-	//				int[][] domainKernel = new int[widthKernel * widthKernel][blockgroesse * blockgroesse];
-	//				int n = 0;
-	//				for (int ky = 0; ky < widthKernel; ky++) {
-	//					for (int kx = 0; kx < widthKernel; kx++) {
-	//						int index = dx + kx + (dy + ky) * domainbloeckePerWidth;
-	//						domainKernel[n] = codebuch[index];
-	//						n++;
-	//					}
-	//				}
-	//				
-	//				//int[] domainblock= getBestDomainblock(domainKernel, getRangeblock(x, y, input));
-	//
-	//
-	//				for (int ry = 0; ry < blockgroesse && y + ry < dst.height; ry++) {
-	//					for (int rx = 0; rx < blockgroesse && x + rx < dst.width; rx++) {
-	//						int value = domainblock[rx + ry * blockgroesse];
-	//						dst.argb[x + rx + (y + ry) * dst.width] = 0xff000000 | (value << 16) | (value << 8) | value;
-	//					}
-	//				}
-	//			}
-	//		}
-	//		return dst;
-	//	}
-
-
-	public static int[] getRangeblock(int x, int y, RasterImage image) {
+    /**
+     * Gets positions x,y and returns the range block starting
+     * from these coordinates.
+     * @param x Position in x achse of the image
+     * @param y Position in y achse of the image
+     * @param image Image to be processed
+     * @return in array containing the rangeblock values
+     */
+	private static int[] getRangeblock(int x, int y, RasterImage image) {
 		int[] rangeblock = new int[blockgroesse * blockgroesse];
 		int i = 0;
 
@@ -302,8 +166,13 @@ public class RLE {
 
 	}
 
-
-	public static float[] getBestDomainblock(int[][] domainblocks, int[] rangeblock) {
+   /**
+    * 
+    * @param domainblocks
+    * @param rangeblock
+    * @return
+    */
+	private static float[] getBestDomainblock(int[][] domainblocks, int[] rangeblock) {
 		float smallestError = 10000000;
 		float[]  bestBlock= {0,0,0};
 		for (int i = 0; i < domainblocks.length; i++) {
@@ -331,49 +200,15 @@ public class RLE {
 
 		return bestBlock;
 	}
+	
 
-
-
-	/*	
-	public static RasterImage adjustContrastBrightness(RasterImage domain, RasterImage range) {
-		int blockgroesse = 8;
-		int y, x;
-
-		for (y = 0; y < range.height; y++) {
-			for (x = 0; x < range.width; x++) {
-				int domainM = 0; // Summe der Grauwerte
-				int rangeM = 0;
-				int ry = 0;
-				int rx = 0;
-				int[] rangeb = new int[blockgroesse * blockgroesse];
-				int n = 0;
-				int rangeBlockIndex = 0;
-				float[] ab = getContrastAndBrightness();
-
-				int[][] domainKernel = new int[widthKernel * widthKernel][blockgroesse * blockgroesse];
-				int n = 0;
-				for (int ky = 0; ky < widthKernel; ky++) {
-					for (int kx = 0; kx < widthKernel; kx++) {
-						int index = dx + kx + (dy + ky) * domainbloeckePerWidth;
-						domainKernel[n] = codebuch[index];
-						n++;
-					}
-				}
-
-				int[] domainblock= getBestDomainblock(domainKernel, getRangeblock(x, y, input));
-
-
-				for (int ry = 0; ry < blockgroesse && y + ry < dst.height; ry++) {
-					for (int rx = 0; rx < blockgroesse && x + rx < dst.width; rx++) {
-						int value = domainblock[rx + ry * blockgroesse];
-						dst.argb[x + rx + (y + ry) * dst.width] = 0xff000000 | (value << 16) | (value << 8) | value;
-					}
-				}
-		}
-		return domain;
-	} */
-
-	public static float[] getContrastAndBrightness(int[] domain, int[] range) {
+    /**
+     * 
+     * @param domain
+     * @param range
+     * @return
+     */
+	private static float[] getContrastAndBrightness(int[] domain, int[] range) {
 		int domainM = getMittelwert(domain);
 		int rangeM = getMittelwert(range);
 
@@ -397,11 +232,12 @@ public class RLE {
 	}
 
 	/**
-	 * 
+	 * Gets an array of integers and
+	 * returns the average value.
 	 * @param values
 	 * @return
 	 */
-	public static int getMittelwert(int[] values) {
+	private static int getMittelwert(int[] values) {
 		int sum = 0;
 		for (int value : values) {
 			sum += value;
@@ -409,45 +245,73 @@ public class RLE {
 		return sum / values.length;
 	}
 
+	
+
 	/**
-	 * 
+	 * Gets a random image and starts generated the compressed image
+	 * based on the codebook, the domain indexes for each rangeblock
+	 * and the a,b parameters
 	 * @param range
 	 * @return
 	 */
-	public static RasterImage decoder() {
+	public static RasterImage decoder(RasterImage start) {
 
-		RasterImage start = getGreyImage(256,256); //TODO width, height übertragen
+		start = FractalCompression.getGreyImage(start.width,start.height); 
+		
+		float avgError = 0;
+		int rangeBlockPerWidth = start.width/blockgroesse;
+		int rangeBlockPerHeight = start.height/blockgroesse;
+		
+		for(int counter = 0; counter < 5; counter ++) {
+			
+			int[][] codebuch = createCodebuch(start);	
+			int i = 0;		
+			float tmp = 0;
+			
+			for(int y=0; y< start.height; y+=blockgroesse) {
+				for(int x=0; x<start.width; x+=blockgroesse) {
+					float error = 0;
 
-		int[][] codebuch = createCodebuch(start);	
-		int i = 0;				
-		for(int y=0; y< start.height; y+=blockgroesse) {
-			for(int x=0; x<start.width; x+=blockgroesse) {				
-				for (int ry = 0; ry < blockgroesse && y + ry < start.height; ry++) {
-					for (int rx = 0; rx < blockgroesse && x + rx < start.width; rx++) {
-						int value = codebuch[(int) imageInfo[i][0]][rx + ry * blockgroesse];
-						value = (int) (imageInfo[i][1]*value+ imageInfo[i][2]);						
-						if (value < 0)
-							value = 0;
-						else if (value > 255)
-							value = 255;
+					for (int ry = 0; ry < blockgroesse && y + ry < start.height; ry++) {
+						for (int rx = 0; rx < blockgroesse && x + rx < start.width; rx++) {
+							int domain = codebuch[(int) imageInfo[i][0]][rx + ry * blockgroesse];
+						    int	value = (int) (imageInfo[i][1]*domain+ imageInfo[i][2]);		
+							int range = start.argb[x + rx + (y + ry) * start.width];
 
-						start.argb[x + rx + (y + ry) * start.width] = 0xff000000 | (value << 16) | (value << 8) | value;
+							if (value < 0)
+								value = 0;
+							else if (value > 255)
+								value = 255;
+	
+							start.argb[x + rx + (y + ry) * start.width] = 0xff000000 | (value << 16) | (value << 8) | value;
+							
+							
+							//calculate error
+							int domainValues = (int) (imageInfo[i][1]*domain- imageInfo[i][2]);	
+							error += (range - domainValues)*(range - domainValues);
+						}
 					}
+					avgError += error;
+					i++;
+	
 				}
-				i++;
-
 			}
+			avgError = avgError/(rangeBlockPerWidth*rangeBlockPerHeight);
+			System.out.println(avgError);
+			avgError = 0;
+
 		}
 		return start;
 
 	}
 
+
 	/**
-	 * 
-	 * @param image
-	 * @return
+	 * Gets a RasterImage and scales it down by factor 2.
+	 * @param image RasterImage to be processed
+	 * @return scaled RasterImage
 	 */
-	public static RasterImage scaleImage(RasterImage image) {
+	private static RasterImage scaleImage(RasterImage image) {
 		// scale image
 		// create RasterImage to be returned
 		RasterImage scaled = new RasterImage(image.width / 2, image.height / 2);
@@ -489,14 +353,15 @@ public class RLE {
 	}
 
 	/**
-	 * 
-	 * @param image
-	 * @return
+	 * Gets an RasterImage and returns a 2D of array containing
+	 * a codebook image
+	 * @param image RasterImage to be processed
+	 * @return codebook array
 	 */
-	public static int[][] createCodebuch(RasterImage image) {
+	private static int[][] createCodebuch(RasterImage image) {
 		image = scaleImage(image);
 		int abstand = 2;
-		int[][] codebuch = new int[(image.width / 2 - 3) * (image.height / 2 - 3)][64];
+		int[][] codebuch = new int[(image.width / 2 - 3) * (image.height / 2 - 3)][blockgroesse*blockgroesse];
 		int i = 0;
 		for (int y = 0; y < image.height; y += abstand) {
 			for (int x = 0; x < image.width; x += abstand) {
@@ -518,7 +383,7 @@ public class RLE {
 	}
 
 	/**
-	 * 
+	 * Gets a RasterImage and displays the codebook image generated by it.
 	 * @param image
 	 * @return
 	 */
@@ -547,22 +412,10 @@ public class RLE {
 		return codebuchImage;
 	}
 
-	/**
-	 * Method to copy a Raster image to another Raster Image
-	 * 
-	 * @param src
-	 * @return
-	 */
-	public static RasterImage copy(RasterImage src) {
-		RasterImage dst = new RasterImage(src.width, src.height);
-		for (int i = 0; i < src.argb.length; i++) {
-			dst.argb[i] = src.argb[i];
-		}
-		return dst;
-	}
 
 	/**
-	 * 
+	 * Generates a grey RasterImage from given 
+	 * width and height.
 	 * @param width
 	 * @param height
 	 * @return
@@ -574,7 +427,4 @@ public class RLE {
 		}
 		return image;
 	}
-
-
-
 }

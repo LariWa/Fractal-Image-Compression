@@ -73,77 +73,21 @@ public class RLEAppController {
 		sourceInfoLabel.setText("");
 		rleImage = new RasterImage(sourceImage.width, sourceImage.height);
 		rleImage.setToView(rleImageView);
-		compareImages();
 	}
-	
-	private void compareImages() {
-		if(sourceImage.argb.length != rleImage.argb.length || rleImageFileSize == 0) {
-			rleInfoLabel.setText("");
-			return;
-		}
-		double mse = rleImage.getMSEfromComparisonTo(sourceImage);
-		rleInfoLabel.setText(String.format("MSE = %.1f", mse));
-	}
-	
-//	@FXML
-//	public void saveRLEImage() {
-//    	FileChooser fileChooser = new FileChooser();
-//    	fileChooser.setInitialDirectory(fileOpenPath);
-//    	fileChooser.setInitialFileName(sourceFileName.substring(0, sourceFileName.lastIndexOf('.')) + ".run");
-//    	fileChooser.getExtensionFilters().addAll(new FileChooser.ExtensionFilter("RLE Images (*.run)", "*.run"));
-//    	File selectedFile = fileChooser.showSaveDialog(null);
-//    	if(selectedFile != null) {
-//    		try {
-//    			DataOutputStream ouputStream = new DataOutputStream(new FileOutputStream(selectedFile));
-//    			long startTime = System.currentTimeMillis();
-//    			RLE.encodeImage(sourceImage, ouputStream);
-//    			long time = System.currentTimeMillis() - startTime;
-//    			messageLabel.setText("Encoding in " + time + " ms");
-//    		} catch (Exception e) {
-//    			e.printStackTrace();
-//    		}
-//    	}
-//	}
 	
 	@FXML
 	public void saveRLEImage() {
-		RLE.decoder(sourceImage);
+		FractalCompression.decoder(sourceImage);
 	}
 	
 	@FXML
 	public void openRLEImage() {
-//    	FileChooser fileChooser = new FileChooser();
-//    	fileChooser.setInitialDirectory(fileOpenPath);
-//    	fileChooser.getExtensionFilters().addAll(new FileChooser.ExtensionFilter("RLE Images (*.run)", "*.run"));
-//    	File selectedFile = fileChooser.showOpenDialog(null);
-//    	if(selectedFile != null) {
-//    		rleImageFileSize = selectedFile.length();
-//    		try {
-//    			DataInputStream inputStream = new DataInputStream(new FileInputStream(selectedFile));
-//    			long startTime = System.currentTimeMillis();
-//    			rleImage = RLE.decodeImage(inputStream);
-//    			long time = System.currentTimeMillis() - startTime;
-//    			messageLabel.setText("Decoding in " + time + " ms");
-//    			rleImage.setToView(rleImageView);
-//    			compareImages();
-//    		} catch (Exception e) {
-//    			e.printStackTrace();
-//    		}
-//    	}
-        RLE.createRangebloecke(sourceImage).setToView(rleImageView);
-		//RLE.domainApprox(sourceImage).setToView(rleImageView);
+		FractalCompression.createRangebloecke(sourceImage).setToView(rleImageView);
 	}
 	
-	
-		
-	
-
 	@FXML
 	public void openDomainApprox() {
-		RLE.encode(sourceImage);
-		RLE.decoder().setToView(domainApproxImageView);
-	    //RLE.domainBlockApproxAufgabe2(sourceImage).setToView(domainApproxImageView);
-		// RLE.showCodebuch(sourceImage).setToView(domainApproxImageView);
-		// RLE.domainBlockApprox(sourceImage).setToView(domainApproxImageView);
+		FractalCompression.encode(sourceImage);
+		FractalCompression.decoder(sourceImage).setToView(domainApproxImageView);
 	}
 }

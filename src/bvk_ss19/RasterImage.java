@@ -69,20 +69,4 @@ public class RasterImage {
 			imageView.setImage(wr);
 		}
 	}
-		
-	// image operations
-	
-	public double getMSEfromComparisonTo(RasterImage image) {
-		// TODO: compare images "this" and "image" and return the Mean Square Error
-		int sum = 0;		
-
-		for (int i = 0; i < image.argb.length; ++i)
-		{		    	       
-		        int error = image.argb[i] - this.argb[i];
-		        sum += error * error;		    
-		}
-		return (double)sum / image.argb.length;
-	}
-	
-
 }
