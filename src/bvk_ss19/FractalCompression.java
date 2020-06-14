@@ -276,7 +276,7 @@ public class FractalCompression {
 						for (int rx = 0; rx < blockgroesse && x + rx < start.width; rx++) {
 							int domain = codebuch[(int) imageInfo[i][0]][rx + ry * blockgroesse];
 						    int	value = (int) (imageInfo[i][1]*domain+ imageInfo[i][2]);		
-							int range = start.argb[x + rx + (y + ry) * start.width];
+							int range = (start.argb[x + rx + (y + ry) * start.width]>> 16)& 0xff;
 
 						    
 							if (value < 0)
@@ -288,19 +288,18 @@ public class FractalCompression {
 							
 							
 							//calculate error
-							int domainValues = (int) (imageInfo[i][1]*domain + imageInfo[i][2]);	
 							error += (range - value)*(range - value);
 						}
 					}
-					avgError += error/(blockgroesse*blockgroesse);
+					avgError += error;
 					i++;
 	
 				}
 			}
-			avgError = avgError/(rangeBlockPerWidth*rangeBlockPerHeight);
+			avgError = avgError/(start.width*start.height);
 			//System.out.println(avgError);
 			DecimalFormat df = new DecimalFormat("#.000000000000");
-			System.out.println(df.format(avgError));
+			System.out.println(avgError);
 			avgError = 0;
 
 		}
