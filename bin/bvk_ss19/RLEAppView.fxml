@@ -45,7 +45,7 @@
                   </ScrollPane>
                </content>
             </TitledPane>
-             <TitledPane collapsible="false" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" text="Range Block Mean Value" GridPane.columnIndex="1">
+             <TitledPane collapsible="false" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" text="Codebuch" GridPane.columnIndex="1">
                <content>
                   <ScrollPane maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" pannable="true">
                      <content>
@@ -60,7 +60,6 @@
                   <HBox spacing="10.0" VBox.vgrow="NEVER">
                      <children>
                         <Button mnemonicParsing="false" onAction="#openImage" prefHeight="27.0" text="Open Image" />
-                        <Button mnemonicParsing="false" onAction="#saveRLEImage" text="Save RLE" />
                      </children>
                   </HBox>
                </children>
@@ -68,16 +67,16 @@
             <VBox spacing="5.0" GridPane.columnIndex="1" GridPane.rowIndex="2">
                <children>
                   <Label fx:id="rleInfoLabel" text="Info Label" />
-                  <Button mnemonicParsing="false" onAction="#openRLEImage" prefHeight="27.0" text="Open RB" />
+                  <Button mnemonicParsing="false" onAction="#openRLEImage" prefHeight="27.0" text="Show Codebuch" />
                </children>
             </VBox>
             <VBox spacing="5.0" GridPane.columnIndex="2" GridPane.rowIndex="2">
                <children>
                   <Label fx:id="mse" text="Info Label" />
-                  <Button mnemonicParsing="false" onAction="#openDomainApprox" prefHeight="27.0" prefWidth="174.0" text="DB Approx." />
+                  <Button mnemonicParsing="false" onAction="#openDomainApprox" prefHeight="27.0" prefWidth="174.0" text="decode Image" />
                </children>
             </VBox>
-            <TitledPane collapsible="false" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" text="Best Domain Block Approx" GridPane.columnIndex="2">
+            <TitledPane collapsible="false" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" text="Decoded Image" GridPane.columnIndex="2">
                <content>
                   <ScrollPane maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" pannable="true">
                      <content>
@@ -85,13 +84,7 @@
                      </content>
                   </ScrollPane>
                </content>
-            </TitledPane>
-            <VBox spacing="5.0">
-               <children>
-                  <Label fx:id="rleInfoLabel1" text="Info Label" />
-                  <Button mnemonicParsing="false" onAction="#openRLEImage" prefHeight="27.0" text="Open RLE" />
-               </children>
-            </VBox>
+            </TitledPane>           
          </children>
       </GridPane>
    </center>

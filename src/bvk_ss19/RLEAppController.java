@@ -81,18 +81,18 @@ public class RLEAppController {
 	
 	@FXML
 	public void saveRLEImage() {
-		FractalCompression.decoder(sourceImage);
+		FractalCompression.decoder(sourceImage.width, sourceImage.height);
 	}
 	
 	@FXML
 	public void openRLEImage() {
-		FractalCompression.createRangebloecke(sourceImage).setToView(rleImageView);
+		FractalCompression.showCodebuch(sourceImage).setToView(rleImageView);
 	}
 	
 	@FXML
 	public void openDomainApprox() {
 		FractalCompression.encode(sourceImage);
-		FractalCompression.decoder(sourceImage).setToView(domainApproxImageView);
+		FractalCompression.decoder(sourceImage.width, sourceImage.height).setToView(domainApproxImageView);
 		mse.setText("MSE " + FractalCompression.getAvgError());
 	}
 }
