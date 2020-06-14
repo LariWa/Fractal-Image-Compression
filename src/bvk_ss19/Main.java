@@ -23,7 +23,7 @@ public class Main extends Application {
 		BorderPane root = (BorderPane)FXMLLoader.load(getClass().getResource("RLEAppView.fxml"));
 		Scene scene = new Scene(root);
 		primaryStage.setScene(scene);
-		primaryStage.setTitle("RLE Application - SS2020 - Larissa Wagnerberger"); // TODO: add your name(s)
+		primaryStage.setTitle("RLE Application - SS2020 - Larissa Wagnerberger - Andromachi Rozaki"); 
 		primaryStage.show();
 	}
 	

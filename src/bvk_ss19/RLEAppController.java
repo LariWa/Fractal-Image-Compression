@@ -46,6 +46,10 @@ public class RLEAppController {
 
     @FXML
     private Label messageLabel;
+    
+  
+    @FXML
+    private Label mse;
 
     @FXML
     void openImage() {
@@ -89,5 +93,6 @@ public class RLEAppController {
 	public void openDomainApprox() {
 		FractalCompression.encode(sourceImage);
 		FractalCompression.decoder(sourceImage).setToView(domainApproxImageView);
+		mse.setText("MSE " + FractalCompression.getAvgError());
 	}
 }

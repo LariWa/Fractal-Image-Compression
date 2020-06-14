@@ -31,7 +31,8 @@
          </columnConstraints>
          <rowConstraints>
             <RowConstraints minHeight="10.0" vgrow="ALWAYS" />
-            <RowConstraints minHeight="50.0" valignment="TOP" vgrow="NEVER" />
+            <RowConstraints maxHeight="4.0" minHeight="0.0" prefHeight="0.0" vgrow="ALWAYS" />
+            <RowConstraints maxHeight="60.0" minHeight="50.0" prefHeight="60.0" valignment="TOP" vgrow="NEVER" />
             <RowConstraints minHeight="50.0" valignment="TOP" vgrow="NEVER" />
          </rowConstraints>
          <children>
@@ -53,7 +54,7 @@
                   </ScrollPane>
                </content>
             </TitledPane>
-            <VBox spacing="5.0" GridPane.rowIndex="1">
+            <VBox spacing="5.0" GridPane.rowIndex="2">
                <children>
                   <Label fx:id="sourceInfoLabel" text="Info Label" />
                   <HBox spacing="10.0" VBox.vgrow="NEVER">
@@ -64,19 +65,19 @@
                   </HBox>
                </children>
             </VBox>
-            <VBox spacing="5.0" GridPane.columnIndex="1" GridPane.rowIndex="1">
+            <VBox spacing="5.0" GridPane.columnIndex="1" GridPane.rowIndex="2">
                <children>
                   <Label fx:id="rleInfoLabel" text="Info Label" />
                   <Button mnemonicParsing="false" onAction="#openRLEImage" prefHeight="27.0" text="Open RB" />
                </children>
             </VBox>
-            <VBox spacing="5.0" GridPane.columnIndex="2" GridPane.rowIndex="1">
+            <VBox spacing="5.0" GridPane.columnIndex="2" GridPane.rowIndex="2">
                <children>
-                  <Label fx:id="rleInfoLabel" text="Info Label" />
-                  <Button mnemonicParsing="false" onAction="#openDomainApprox" prefHeight="27.0" text="DB Approx." />
-             </children>
+                  <Label fx:id="mse" text="Info Label" />
+                  <Button mnemonicParsing="false" onAction="#openDomainApprox" prefHeight="27.0" prefWidth="174.0" text="DB Approx." />
+               </children>
             </VBox>
-            <TitledPane collapsible="false" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" text="Above Domain Block Approx" GridPane.columnIndex="2">
+            <TitledPane collapsible="false" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" text="Best Domain Block Approx" GridPane.columnIndex="2">
                <content>
                   <ScrollPane maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" pannable="true">
                      <content>
