@@ -182,7 +182,7 @@ public class FractalCompression {
 			int[] blockAdjusted= new int[blockgroesse*blockgroesse];
 
 			for (int j = 0; j < blockgroesse * blockgroesse; j++) { // Kontrast und Helligkeit anpassen
-				int domainValue = (int) (ab[0] * domainblocks[i][j] - ab[1]);
+				int domainValue = (int) (ab[0] * domainblocks[i][j] + ab[1]);
 				if (domainValue < 0)
 					domainValue = 0;
 				else if (domainValue > 255)
@@ -276,7 +276,9 @@ public class FractalCompression {
 						for (int rx = 0; rx < blockgroesse && x + rx < start.width; rx++) {
 							int domain = codebuch[(int) imageInfo[i][0]][rx + ry * blockgroesse];
 						    int	value = (int) (imageInfo[i][1]*domain+ imageInfo[i][2]);		
+							int range = start.argb[x + rx + (y + ry) * start.width];
 
+						    
 							if (value < 0)
 								value = 0;
 							else if (value > 255)
@@ -286,7 +288,6 @@ public class FractalCompression {
 							
 							
 							//calculate error
-							int range = start.argb[x + rx + (y + ry) * start.width];
 							int domainValues = (int) (imageInfo[i][1]*domain + imageInfo[i][2]);	
 							error += (range - value)*(range - value);
 						}
