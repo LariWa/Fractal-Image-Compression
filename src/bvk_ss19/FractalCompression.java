@@ -6,6 +6,10 @@
 
 package bvk_ss19;
 
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.FileInputStream;
+import java.io.IOException;
 import java.text.DecimalFormat;
 
 public class FractalCompression {
@@ -27,7 +31,7 @@ public class FractalCompression {
 	 * @param input RasterImage to be processed
 	 * @return compressed RasterImage
 	 */
-	public static RasterImage encode(RasterImage input) {
+	public static RasterImage encode(RasterImage input,DataOutputStream out) throws IOException  {
 		// calculate rangeblock per dimension
 		int rangebloeckePerWidth = input.width / blockgroesse;
 		int rangebloeckePerHeight = input.height / blockgroesse;
@@ -77,7 +81,96 @@ public class FractalCompression {
 				j++;
 			}
 		}
+		
+		//write out values to be read from decoder
+		out.writeInt(input.width);
+		out.writeInt(input.height);
+		out.writeInt(blockgroesse);
+		out.writeInt(imageInfo.length);
+		out.writeInt(imageInfo[0].length);
+		
+		calculateIndices(input.width, input.height);
+		
+		for(int row = 0; row<imageInfo.length; row ++) {
+			for(int column = 0; column<imageInfo[0].length; column++) {
+				out.writeFloat(imageInfo[row][column]);
+			}
+		}
+		out.close();
+	
 		return dst;
+	}
+	
+	/**
+	 * 
+	 * @param inputStream
+	 * @return
+	 * @throws Exception
+	 */
+	public static RasterImage decode(DataInputStream inputStream) throws Exception{
+			int width = inputStream.readInt();
+			int height = inputStream.readInt();
+			
+			RasterImage image = FractalCompression.getGreyImage(width, height);
+
+			
+			int inputedBlockgroesse = inputStream.readInt();
+
+			int imgDatarows = inputStream.readInt();
+			int imgDatacols = inputStream.readInt();
+			
+			float[][] imgData = new float[imgDatarows][imgDatacols];
+			
+			while(inputStream.available() > 0) {
+		
+					for(int rows=0; rows<imgDatarows; rows++) {
+						for(int cols=0; cols<imgDatacols; cols++) {
+		 
+							imgData[rows][cols] = inputStream.readFloat();
+				} }}
+		
+			//calculateIndices(width, height);
+
+			// make iterations for image reconstruction
+			for (int counter = 0; counter < 50; counter++) {
+				int[][] codebuch = createCodebuch(image); // get codebook
+				int i = 0;
+
+				// iterate image per rangeblock
+				for (int y = 0; y < image.height; y += inputedBlockgroesse) {
+					for (int x = 0; x < image.width; x += inputedBlockgroesse) {
+						// iterate rangeblock
+						for (int ry = 0; ry < inputedBlockgroesse && y + ry < image.height; ry++) {
+							for (int rx = 0; rx < inputedBlockgroesse && x + rx < image.width; rx++) {
+								int range = (image.argb[x + rx + (y + ry) * image.width] >> 16) & 0xff; // get current value
+																										// of rangeblock
+								// get current value of best fit domainblock pixel
+								int domain = codebuch[(int) imgData[i][0]][rx + ry * inputedBlockgroesse];
+								int value = (int) (imgData[i][1] * domain + imgData[i][2]);
+
+								// apply thresshold
+								if (value < 0)
+									value = 0;
+								else if (value > 255)
+									value = 255;
+
+								image.argb[x + rx + (y + ry) * image.width] = 0xff000000 | (value << 16) | (value << 8)
+										| value;
+
+								avgError += (range - value) * (range - value); // calculate error
+							}
+						}
+						i++;
+					}
+				}
+				avgError = avgError / (float) (width * height);
+				if (avgError < 1)
+					break; // stop iterations when error drops below 1
+				if (counter != 49)
+					avgError = 0;
+			}															// pixel
+ 
+			return image;	
 	}
 	
 	/**
@@ -285,60 +378,60 @@ public class FractalCompression {
 		}
 	}
 
-	/**
-	 *decodes an image based on codebook indices, brightness and contrast values
-	 * 
-	 * @param width, height
-	 * @return
-	 */
-	public static RasterImage decoder(int width, int height) {
-		// start from grey image
-		RasterImage image = FractalCompression.getGreyImage(width, height);
-
-		calculateIndices(width, height);
-
-		// make iterations for image reconstruction
-		for (int counter = 0; counter < 50; counter++) {
-			int[][] codebuch = createCodebuch(image); // get codebook
-			int i = 0;
-
-			// iterate image per rangeblock
-			for (int y = 0; y < image.height; y += blockgroesse) {
-				for (int x = 0; x < image.width; x += blockgroesse) {
-					// iterate rangeblock
-					for (int ry = 0; ry < blockgroesse && y + ry < image.height; ry++) {
-						for (int rx = 0; rx < blockgroesse && x + rx < image.width; rx++) {
-							int range = (image.argb[x + rx + (y + ry) * image.width] >> 16) & 0xff; // get current value
-																									// of rangeblock
-																									// pixel
-
-							// get current value of best fit domainblock pixel
-							int domain = codebuch[(int) imageInfo[i][0]][rx + ry * blockgroesse];
-							int value = (int) (imageInfo[i][1] * domain + imageInfo[i][2]);
-
-							// apply thresshold
-							if (value < 0)
-								value = 0;
-							else if (value > 255)
-								value = 255;
-
-							image.argb[x + rx + (y + ry) * image.width] = 0xff000000 | (value << 16) | (value << 8)
-									| value;
-
-							avgError += (range - value) * (range - value); // calculate error
-						}
-					}
-					i++;
-				}
-			}
-			avgError = avgError / (float) (width * height);
-			if (avgError < 1)
-				break; // stop iterations when error drops below 1
-			if (counter != 49)
-				avgError = 0;
-		}
-		return image;
-	}
+//	/**
+//	 *decodes an image based on codebook indices, brightness and contrast values
+//	 * 
+//	 * @param width, height
+//	 * @return
+//	 */
+//	public static RasterImage decoder(int width, int height) {
+//		// start from grey image
+//		RasterImage image = FractalCompression.getGreyImage(width, height);
+//
+//		calculateIndices(width, height);
+//
+//		// make iterations for image reconstruction
+//		for (int counter = 0; counter < 50; counter++) {
+//			int[][] codebuch = createCodebuch(image); // get codebook
+//			int i = 0;
+//
+//			// iterate image per rangeblock
+//			for (int y = 0; y < image.height; y += blockgroesse) {
+//				for (int x = 0; x < image.width; x += blockgroesse) {
+//					// iterate rangeblock
+//					for (int ry = 0; ry < blockgroesse && y + ry < image.height; ry++) {
+//						for (int rx = 0; rx < blockgroesse && x + rx < image.width; rx++) {
+//							int range = (image.argb[x + rx + (y + ry) * image.width] >> 16) & 0xff; // get current value
+//																									// of rangeblock
+//																									// pixel
+//
+//							// get current value of best fit domainblock pixel
+//							int domain = codebuch[(int) imageInfo[i][0]][rx + ry * blockgroesse];
+//							int value = (int) (imageInfo[i][1] * domain + imageInfo[i][2]);
+//
+//							// apply thresshold
+//							if (value < 0)
+//								value = 0;
+//							else if (value > 255)
+//								value = 255;
+//
+//							image.argb[x + rx + (y + ry) * image.width] = 0xff000000 | (value << 16) | (value << 8)
+//									| value;
+//
+//							avgError += (range - value) * (range - value); // calculate error
+//						}
+//					}
+//					i++;
+//				}
+//			}
+//			avgError = avgError / (float) (width * height);
+//			if (avgError < 1)
+//				break; // stop iterations when error drops below 1
+//			if (counter != 49)
+//				avgError = 0;
+//		}
+//		return image;
+//	}
 
 	/**
 	 * Gets a RasterImage and scales it down by factor 2.
