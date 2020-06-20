@@ -90,12 +90,17 @@ public class FractalCompression {
 		out.writeInt(imageInfo[0].length);
 		
 		calculateIndices(input.width, input.height);
-		
-		for(int row = 0; row<imageInfo.length; row ++) {
-			for(int column = 0; column<imageInfo[0].length; column++) {
-				out.writeFloat(imageInfo[row][column]);
+				
+		for(int row=0;row<imageInfo.length;row++) {
+			for(int column=0;column<imageInfo[0].length;column++) {
+	         	int intBits =  Float.floatToIntBits(imageInfo[row][column]); 
+	         	out.writeByte((byte) (intBits >> 24));
+	         	out.writeByte((byte) (intBits >> 16));
+	         	out.writeByte((byte) (intBits >> 8));
+	         	out.writeByte((byte) (intBits));
 			}
 		}
+		
 		out.close();
 	
 		return dst;
@@ -125,8 +130,15 @@ public class FractalCompression {
 		
 					for(int rows=0; rows<imgDatarows; rows++) {
 						for(int cols=0; cols<imgDatacols; cols++) {
-		 
-							imgData[rows][cols] = inputStream.readFloat();
+							//int tmp = inputStream.readByte() & 0xff;
+							
+							int intBits = inputStream.readByte() << 24 | (inputStream.readByte() & 0xFF) << 16 
+									| (inputStream.readByte() & 0xFF) << 8 | (inputStream.readByte() & 0xFF);
+							float number = Float.intBitsToFloat(intBits);
+							
+//							int tmp = inputStream.readInt();
+//			        	    float number = Float.intBitsToFloat(tmp);
+							imgData[rows][cols] = number;
 				} }}
 		
 			//calculateIndices(width, height);
