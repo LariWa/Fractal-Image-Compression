@@ -45,7 +45,7 @@ public class FractalCompression {
 		RasterImage dst = new RasterImage(input.width, input.height);
 
 		int j = 0;
-		imageInfo = new float[input.argb.length][3];//for decoder later write to file
+		imageInfo = new float[rangebloeckePerWidth*rangebloeckePerHeight][3];//for decoder later write to file
 		for (int y = 0; y < dst.height; y += blockgroesse) {
 			for (int x = 0; x < dst.width; x += blockgroesse) {
 
@@ -86,21 +86,14 @@ public class FractalCompression {
 		out.writeInt(input.width);
 		out.writeInt(input.height);
 		out.writeInt(blockgroesse);
-		out.writeInt(imageInfo.length);
-		out.writeInt(imageInfo[0].length);
-		
-		calculateIndices(input.width, input.height);
+		out.writeInt(widthKernel);
+
 				
-		for(int row=0;row<imageInfo.length;row++) {
-			for(int column=0;column<imageInfo[0].length;column++) {
-	         	int intBits =  Float.floatToIntBits(imageInfo[row][column]); 
-	         	out.writeByte((byte) (intBits >> 24));
-	         	out.writeByte((byte) (intBits >> 16));
-	         	out.writeByte((byte) (intBits >> 8));
-	         	out.writeByte((byte) (intBits));
-			}
-		}
-		
+		for(int row=0;row<imageInfo.length;row++) {			
+				out.writeInt((int)(imageInfo[row][0]));
+				out.writeInt((int)(imageInfo[row][1]*100));
+				out.writeInt((int)(imageInfo[row][2]));
+		}		
 		out.close();
 	
 		return dst;
@@ -117,31 +110,24 @@ public class FractalCompression {
 			int height = inputStream.readInt();
 			
 			RasterImage image = FractalCompression.getGreyImage(width, height);
-
 			
 			int inputedBlockgroesse = inputStream.readInt();
-
-			int imgDatarows = inputStream.readInt();
-			int imgDatacols = inputStream.readInt();
+			int widthKernel = inputStream.readInt();
 			
-			float[][] imgData = new float[imgDatarows][imgDatacols];
+			int rangebloeckePerWidth = width / inputedBlockgroesse;
+			int rangebloeckePerHeight = height / inputedBlockgroesse;
 			
-			while(inputStream.available() > 0) {
+			
+			float[][] imgData = new float[rangebloeckePerWidth*rangebloeckePerHeight][3];
+			
+			while(inputStream.available() > 0) {		
+					for(int rows=0; rows<imgData.length; rows++) {
+						imgData[rows][0]=(float)inputStream.readInt();
+						imgData[rows][1]=(float)inputStream.readInt()/100f;
+						imgData[rows][2]=(float)inputStream.readInt();
+					}}
 		
-					for(int rows=0; rows<imgDatarows; rows++) {
-						for(int cols=0; cols<imgDatacols; cols++) {
-							//int tmp = inputStream.readByte() & 0xff;
-							
-							int intBits = inputStream.readByte() << 24 | (inputStream.readByte() & 0xFF) << 16 
-									| (inputStream.readByte() & 0xFF) << 8 | (inputStream.readByte() & 0xFF);
-							float number = Float.intBitsToFloat(intBits);
-							
-//							int tmp = inputStream.readInt();
-//			        	    float number = Float.intBitsToFloat(tmp);
-							imgData[rows][cols] = number;
-				} }}
-		
-			//calculateIndices(width, height);
+			calculateIndices(imgData, width, height, inputedBlockgroesse, widthKernel);
 
 			// make iterations for image reconstruction
 			for (int counter = 0; counter < 50; counter++) {
@@ -350,7 +336,7 @@ public class FractalCompression {
 	 * @param width, height of image
 	 * @return
 	 */
-	private static void calculateIndices(int width, int height) {
+	private static float[][] calculateIndices(float[][] imgData, int width, int height, int blockgroesse, int widthKernel) {
 		int rangebloeckePerWidth = width / blockgroesse;
 		int rangebloeckePerHeight = height / blockgroesse;
 
@@ -378,18 +364,18 @@ public class FractalCompression {
 					dy = domainbloeckePerHeight - widthKernel;
 
 				// calculate x and y from index of kernel
-				int yd = (int) (imageInfo[i][0] / widthKernel);
-				int xd = (int) (imageInfo[i][0] % widthKernel);
+				int yd = (int) (imgData[i][0] / widthKernel);
+				int xd = (int) (imgData[i][0] % widthKernel);
 
 				// combine to index
 				int result = xd + dx + (yd + dy) * domainbloeckePerWidth;
 
-				imageInfo[i][0] = result;
+				imgData[i][0] = result;
 				i++;
 			}
 		}
+		return null;
 	}
-
 //	/**
 //	 *decodes an image based on codebook indices, brightness and contrast values
 //	 * 
