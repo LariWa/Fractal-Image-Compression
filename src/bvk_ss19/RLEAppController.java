@@ -91,9 +91,11 @@ public class RLEAppController {
 	
 	@FXML
 	public void openDomainApprox() {
+		
+		//FractalCompression.scaleImageRGB(sourceImage).setToView(domainApproxImageView);
 		try {
 			DataOutputStream ouputStream = new DataOutputStream(new FileOutputStream("unknown.run"));
-			FractalCompression.encode(sourceImage, ouputStream);
+			FractalCompression.encodeRGB(sourceImage, ouputStream);
 		}
 		 catch (Exception e) {
  			e.printStackTrace();
@@ -101,10 +103,10 @@ public class RLEAppController {
 		
 		try {
 			DataInputStream inputStream = new DataInputStream(new FileInputStream("unknown.run"));
-			FractalCompression.decode(inputStream).setToView(domainApproxImageView);
+			FractalCompression.decodeRGB(inputStream).setToView(domainApproxImageView);
 			mse.setText("MSE " + FractalCompression.getAvgError());
 		}
-		 catch (Exception e) {
+		catch (Exception e) {
 	 			e.printStackTrace();
 	 		}
 			
