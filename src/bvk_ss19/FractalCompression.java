@@ -406,7 +406,7 @@ public class FractalCompression {
 		for (int ry = 0; ry < blockgroesse && y + ry < image.height; ry++) {
 			for (int rx = 0; rx < blockgroesse && x + rx < image.width; rx++) {
 				int value = image.argb[(x + rx) + (y + ry) * image.width];
-				value = (value >> 16) & 0xff;
+				//value = (value >> 16) & 0xff; für grauwert
 				rangeblock[i] = value;
 				i++;
 			}
@@ -654,7 +654,7 @@ public class FractalCompression {
 		else if(canal == 2) {
 			for(int i=0; i<argbBytes.length;i++) {
 				temp[i] = argbBytes[i]  & 0xff;
-				System.out.println(i + "   B  " + temp[i]);
+				//System.out.println(i + "   B  " + temp[i]);
 
 			}
 		}
@@ -954,7 +954,7 @@ public class FractalCompression {
 		int domainbloeckePerWidth = rangebloeckePerWidth * 2 - 3;
 		int domainbloeckePerHeight = rangebloeckePerHeight * 2 - 3;
 		// generate codebook
-		int[][] codebuch = createCodebuch(image);
+		int[][] codebuch = createCodebuchRGB(image);
 		int i = 0;
 
 		// generate image to display
