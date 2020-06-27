@@ -61,14 +61,14 @@
             <VBox spacing="5.0" GridPane.columnIndex="3" GridPane.rowIndex="2">
                <children>
                   <Label fx:id="mse" text="Info Label" />
-                  <Button mnemonicParsing="false" onAction="#openDomainApprox" prefHeight="27.0" prefWidth="174.0" text="decode Image" />
+                  <Button mnemonicParsing="false" onAction="#openDecodedImage" prefHeight="27.0" prefWidth="174.0" text="decode Image" />
                </children>
             </VBox>
             <TitledPane collapsible="false" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" text="Decoded Image" GridPane.columnIndex="3">
                <content>
                   <ScrollPane maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" pannable="true">
                      <content>
-                        <ImageView fx:id="domainApproxImageView" pickOnBounds="true" preserveRatio="true" smooth="false" />
+                        <ImageView fx:id="decodedImageView" pickOnBounds="true" preserveRatio="true" smooth="false" />
                      </content>
                   </ScrollPane>
                </content>

@@ -30,17 +30,13 @@ public class RLEAppController {
 
 	private RasterImage sourceImage;
 	private String sourceFileName;
-	
-	private FractalCompression fractalcompression;
-	
+		
 	private RasterImage rleImage;
-	private long rleImageFileSize;
 
 	ObservableList list = FXCollections.observableArrayList();    
 	
 	@FXML
     private ImageView sourceImageView;
-
 
     @FXML
     private Label sourceInfoLabel;
@@ -49,7 +45,7 @@ public class RLEAppController {
     private ImageView rleImageView;
 
     @FXML
-    private ImageView domainApproxImageView;
+    private ImageView decodedImageView;
     
     @FXML
     private ImageView bestFitCollage;
@@ -106,7 +102,7 @@ public class RLEAppController {
 	}
 	
 	@FXML
-	public void openDomainApprox() {
+	public void openDecodedImage() {
 		
 		try {
 			DataOutputStream ouputStream = new DataOutputStream(new FileOutputStream("unknown.run"));
@@ -118,7 +114,7 @@ public class RLEAppController {
 		
 		try {
 			DataInputStream inputStream = new DataInputStream(new FileInputStream("unknown.run"));
-			FractalCompression.decode(inputStream).setToView(domainApproxImageView);
+			FractalCompression.decode(inputStream).setToView(decodedImageView);
 			mse.setText("MSE " + FractalCompression.getAvgError());
 		}
 		catch (Exception e) {
