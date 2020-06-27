@@ -12,8 +12,14 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 
+import javafx.beans.value.ChangeListener ;
+import javafx.beans.value.ObservableValue;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
+import javafx.scene.control.ChoiceBox;
 import javafx.scene.control.Label;
+import javafx.scene.control.Slider;
 import javafx.scene.image.ImageView;
 import javafx.stage.FileChooser;
 
@@ -25,10 +31,14 @@ public class RLEAppController {
 	private RasterImage sourceImage;
 	private String sourceFileName;
 	
+	private FractalCompression fractalcompression;
+	
 	private RasterImage rleImage;
 	private long rleImageFileSize;
 
-    @FXML
+	ObservableList list = FXCollections.observableArrayList();    
+	
+	@FXML
     private ImageView sourceImageView;
 
 
@@ -42,12 +52,17 @@ public class RLEAppController {
     private ImageView domainApproxImageView;
     
     @FXML
+    private ImageView bestFitCollage;
+    
+    @FXML
     private Label rleInfoLabel;
 
     @FXML
     private Label messageLabel;
     
-  
+    @FXML
+    private ChoiceBox blockSize;
+    
     @FXML
     private Label mse;
 
@@ -66,7 +81,8 @@ public class RLEAppController {
 
 	@FXML
 	public void initialize() {
-		loadAndDisplayImage(new File(initialFileName));		
+		loadAndDisplayImage(new File(initialFileName));	
+		loadData();
 	}
 	
 	private void loadAndDisplayImage(File file) {
@@ -92,10 +108,9 @@ public class RLEAppController {
 	@FXML
 	public void openDomainApprox() {
 		
-		//FractalCompression.scaleImageRGB(sourceImage).setToView(domainApproxImageView);
 		try {
 			DataOutputStream ouputStream = new DataOutputStream(new FileOutputStream("unknown.run"));
-			FractalCompression.encodeRGB(sourceImage, ouputStream);
+			FractalCompression.encode(sourceImage, ouputStream).setToView(bestFitCollage);
 		}
 		 catch (Exception e) {
  			e.printStackTrace();
@@ -103,7 +118,7 @@ public class RLEAppController {
 		
 		try {
 			DataInputStream inputStream = new DataInputStream(new FileInputStream("unknown.run"));
-			FractalCompression.decodeRGB(inputStream).setToView(domainApproxImageView);
+			FractalCompression.decode(inputStream).setToView(domainApproxImageView);
 			mse.setText("MSE " + FractalCompression.getAvgError());
 		}
 		catch (Exception e) {
@@ -111,4 +126,25 @@ public class RLEAppController {
 	 		}
 			
 	}
-}
+	
+	@FXML
+	public void adjustBlockSize(){
+		System.out.println(blockSize.getValue().toString());		 
+	}
+	
+	private void loadData() {
+		list.removeAll(list);
+		
+		int a = 4;
+		int b = 8;
+		int c = 16;
+		int d = 32;
+		
+		list.addAll(a,b,c,d);
+		blockSize.getItems().addAll(list);
+	}
+	
+	
+	
+	}
+

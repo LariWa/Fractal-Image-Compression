@@ -1,4 +1,4 @@
-//BVK Ue1 SS2019 Vorgabe
+ //BVK Ue1 SS2019 Vorgabe
 //
 // Copyright (C) 2018 by Klaus Jung
 // All rights reserved.
@@ -26,14 +26,43 @@ public class FractalCompression {
 	public static float getAvgError() {
 		return avgError;
 	}
+	
+	
+	public static boolean isGreyScale(RasterImage input){
+		for(int y=0;y<input.height;y++) {
+			for(int x=0;x<input.width;x++) {
+				int r = (input.argb[x+y*input.width] >> 16) & 0xff;
+				int g = (input.argb[x+y*input.width] >> 8) & 0xff;
+				int b =  input.argb[x+y*input.width] & 0xff;
+				
+				if(r != g || g != b || b != r) {
+					return false;
+				}
+
+			}
+		}
+		return true;
+	}
+	
+	/**
+	 * 
+	 * @param input
+	 * @param out
+	 * @throws IOException
+	 */
+	public static RasterImage encode(RasterImage input,DataOutputStream out) throws IOException  {
+		if(isGreyScale(input)) return encodeGrayScale(input,out);
+		else return encodeRGB(input,out);
+	}
+	
+	
 
 	/**
 	 * Applies fractal image compression to a given RasterImage.
-	 * 
 	 * @param input RasterImage to be processed
 	 * @return compressed RasterImage
 	 */
-	public static RasterImage encode(RasterImage input,DataOutputStream out) throws IOException  {
+	public static RasterImage encodeGrayScale(RasterImage input,DataOutputStream out) throws IOException  {
 		// calculate rangeblock per dimension
 		int rangebloeckePerWidth = input.width / blockgroesse;
 		int rangebloeckePerHeight = input.height / blockgroesse;
@@ -51,7 +80,7 @@ public class FractalCompression {
 		for (int y = 0; y < dst.height; y += blockgroesse) {
 			for (int x = 0; x < dst.width; x += blockgroesse) {
 
-				int i = getDomainIndex(x, y, rangebloeckePerWidth, rangebloeckePerHeight, domainbloeckePerWidth);
+				int i = getDomainBlockIndex(x, y, rangebloeckePerWidth, rangebloeckePerHeight, domainbloeckePerWidth);
 				
 				// create domainblock kernel-------------------
 				//calculates start position of kernel + randbehandlung
@@ -84,6 +113,7 @@ public class FractalCompression {
 			}
 		}
 		
+		out.writeInt(0);
 		//write out values to be read from decoder
 		out.writeInt(input.width);
 		out.writeInt(input.height);
@@ -98,8 +128,9 @@ public class FractalCompression {
 		}		
 		out.close();
 	
-		return dst;
+		return getBestGeneratedCollage(input);
 	}
+
 
 	
 	/**
@@ -126,7 +157,7 @@ public class FractalCompression {
 		for (int y = 0; y < dst.height; y += blockgroesse) {
 			for (int x = 0; x < dst.width; x += blockgroesse) {
 
-				int i = getDomainIndex(x, y, rangebloeckePerWidth, rangebloeckePerHeight, domainbloeckePerWidth);
+				int i = getDomainBlockIndex(x, y, rangebloeckePerWidth, rangebloeckePerHeight, domainbloeckePerWidth);
 				
 				// create domainblock kernel-------------------
 				//calculates start position of kernel + randbehandlung
@@ -154,11 +185,12 @@ public class FractalCompression {
 				//---------------
 				
 				// apply algorithm based on minimum error to find best fit domain block
-				imageInfoRGB[j] = getBestDomainblockRGB(domainKernel, getRangeblock(x, y, input));	
+				imageInfoRGB[j] = getBestDomainblockRGB(domainKernel, getRangeblockRGB(x, y, input));	
 				j++;
 			}
 		}
 		
+		out.writeInt(1);
 		//write out values to be read from decoder
 		out.writeInt(input.width);
 		out.writeInt(input.height);
@@ -167,9 +199,6 @@ public class FractalCompression {
 
 				
 		for(int row=0;row<imageInfoRGB.length;row++) {	
-			
-		//		System.out.println(imageInfoRGB[row][0] + "     "+ imageInfoRGB[row][1]*100 + "     "+ imageInfoRGB[row][2] + "     "+ 
-		//		imageInfoRGB[row][3]+ "     "+ imageInfoRGB[row][4]);
 				out.writeInt((int)(imageInfoRGB[row][0]));
 				out.writeInt((int)(imageInfoRGB[row][1]*1000000));
 				out.writeInt((int)(imageInfoRGB[row][2]*100000));
@@ -180,8 +209,121 @@ public class FractalCompression {
 		}		
 		out.close();
 	
-		return dst;
+		return getBestGeneratedCollageRGB(input);
 	}
+	
+	/**
+	 * 
+	 * @param encodedImage
+	 * @return
+	 */
+	public static RasterImage getBestGeneratedCollage(RasterImage encodedImage) {
+		
+		RasterImage image = FractalCompression.generateGrayImage(encodedImage.width, encodedImage.height);
+		
+		calculateIndices(imageInfo, encodedImage.width, encodedImage.height, blockgroesse, widthKernel);
+
+		// make iterations for image reconstruction
+		for (int counter = 0; counter < 50; counter++) {
+			int[][] codebuch = createCodebuch(image); // get codebook
+			int i = 0;
+
+			// iterate image per rangeblock
+			for (int y = 0; y < image.height; y += blockgroesse) {
+				for (int x = 0; x < image.width; x += blockgroesse) {
+					// iterate rangeblock
+					for (int ry = 0; ry < blockgroesse && y + ry < image.height; ry++) {
+						for (int rx = 0; rx < blockgroesse && x + rx < image.width; rx++) {
+							int range = (image.argb[x + rx + (y + ry) * image.width] >> 16) & 0xff; // get current value
+																									// of rangeblock
+							// get current value of best fit domainblock pixel
+							int domain = codebuch[(int) imageInfo[i][0]][rx + ry * blockgroesse];
+							int value = (int) (imageInfo[i][1] * domain + imageInfo[i][2]);
+
+							// apply thresshold
+							if (value < 0)
+								value = 0;
+							else if (value > 255)
+								value = 255;
+
+							image.argb[x + rx + (y + ry) * image.width] = 0xff000000 | (value << 16) | (value << 8)
+									| value;
+
+							avgError += (range - value) * (range - value); // calculate error
+						}
+					}
+					i++;
+				}
+			}
+		}
+		return image;	
+
+		
+	}
+	
+	
+	/**
+	 * 
+	 * @param encodedImage
+	 * @return
+	 */
+	public static RasterImage getBestGeneratedCollageRGB(RasterImage encodedImage) {
+		
+		RasterImage image = FractalCompression.generateGrayImage(encodedImage.width, encodedImage.height);
+		
+		calculateIndices(imageInfoRGB, encodedImage.width, encodedImage.height, blockgroesse, widthKernel);
+
+		// make iterations for image reconstruction
+		for (int counter = 0; counter < 50; counter++) {
+			int[][] codebuch = createCodebuchRGB(image); // get codebook
+			int i = 0;
+
+			// iterate image per rangeblock
+			for (int y = 0; y < image.height; y += blockgroesse) {
+				for (int x = 0; x < image.width; x += blockgroesse) {
+					// iterate rangeblock
+					for (int ry = 0; ry < blockgroesse && y + ry < image.height; ry++) {
+						for (int rx = 0; rx < blockgroesse && x + rx < image.width; rx++) {
+							int rangeR = (image.argb[x + rx + (y + ry) * image.width] >> 16) & 0xff; // get current value of rangeblock
+							int rangeG = (image.argb[x + rx + (y + ry) * image.width] >> 8) & 0xff; // get current value of rangeblock
+							int rangeB = image.argb[x + rx + (y + ry) * image.width]  & 0xff; // get current value of rangeblock
+							
+							
+							
+							// get current value of best fit domainblock pixel
+							int domain = codebuch[(int) imageInfoRGB[i][0]][rx + ry * blockgroesse];
+							int domainR = (domain >> 16) & 0xff;
+							int domainG = (domain >> 8) & 0xff;
+							int domainB = domain & 0xff;
+							
+							int valueR = (int) (imageInfoRGB[i][1] * domainR + imageInfoRGB[i][2]);
+							int valueG = (int) (imageInfoRGB[i][1] * domainG + imageInfoRGB[i][3]);
+							int valueB = (int) (imageInfoRGB[i][1] * domainB + imageInfoRGB[i][4]);
+
+							
+							// apply thresshold
+							valueR = applyThreshold(valueR);
+							valueG = applyThreshold(valueG);
+							valueB = applyThreshold(valueB);
+							
+							image.argb[x + rx + (y + ry) * image.width] = 0xff000000 | (valueR << 16) | (valueG << 8)| valueB;
+						}
+					}
+					i++;
+				}
+			}
+		}
+		return image;	
+
+		
+	}
+	
+	
+	
+	
+	
+	
+	
 	
 	/**
 	 * 
@@ -189,11 +331,11 @@ public class FractalCompression {
 	 * @return
 	 * @throws Exception
 	 */
-	public static RasterImage decode(DataInputStream inputStream) throws Exception{
+	public static RasterImage decodeGreyScale(DataInputStream inputStream) throws Exception{
 			int width = inputStream.readInt();
 			int height = inputStream.readInt();
 			
-			RasterImage image = FractalCompression.getGreyImage(width, height);
+			RasterImage image = FractalCompression.generateGrayImage(width, height);
 			
 			int inputedBlockgroesse = inputStream.readInt();
 			int widthKernel = inputStream.readInt();
@@ -255,6 +397,7 @@ public class FractalCompression {
 			return image;	
 	}
 
+
 	
 	
 	/**
@@ -267,7 +410,7 @@ public class FractalCompression {
 			int width = inputStream.readInt();
 			int height = inputStream.readInt();
 			
-			RasterImage image = FractalCompression.getGreyImage(width, height);
+			RasterImage image = FractalCompression.generateGrayImage(width, height);
 			
 			int inputedBlockgroesse = inputStream.readInt();
 			int widthKernel = inputStream.readInt();
@@ -287,13 +430,7 @@ public class FractalCompression {
 						imgData[rows][4]=(float)inputStream.readInt();
 
 					}}
-			
-//			for(int row = 0; row <imgData.length; row++) {
-//				 System.out.println(imgData[row][0] + "  "+ imgData[row][1]*100 + "  "+ imgData[row][2] + "  "+ 
-//						 imgData[row][3]+ "  "+ imgData[row][4]);				}
-//				
-			
-		
+					
 			calculateIndices(imgData, width, height, inputedBlockgroesse, widthKernel);
 
 			// make iterations for image reconstruction
@@ -343,10 +480,10 @@ public class FractalCompression {
 					}
 				}
 				avgError = avgError / (float) (width * height);
-//				if (avgError < 1)
-//					break; // stop iterations when error drops below 1
-//				if (counter != 49)
-//					avgError = 0;
+				if (avgError < 1)
+					break; // stop iterations when error drops below 1
+				if (counter != 49)
+					avgError = 0;
 			}															// pixel
  
 			return image;	
@@ -358,7 +495,7 @@ public class FractalCompression {
 	 * @param x,y,rangeblockePerWidth, rangeblockePerHeight
 	 * @return index of domainblock
 	 */
-	private static int getDomainIndex(int x, int y, int rangebloeckePerWidth, int rangebloeckePerHeight,
+	private static int getDomainBlockIndex(int x, int y, int rangebloeckePerWidth, int rangebloeckePerHeight,
 			int domainbloeckePerWidth) {
 		int xr = x / 8;
 		int yr = y / 8;
@@ -389,6 +526,37 @@ public class FractalCompression {
 		return i;
 	}
 
+	public static RasterImage decode(DataInputStream inputStream) throws Exception{
+		int isGreyScale = inputStream.readInt();
+		if(isGreyScale == 0) return decodeGreyScale(inputStream);
+		else return decodeRGB(inputStream);
+	}
+	
+	/**
+	 * Gets positions x,y and returns the range block starting from these
+	 * coordinates.
+	 * 
+	 * @param x     Position in x achse of the image
+	 * @param y     Position in y achse of the image
+	 * @param image Image to be processed
+	 * @return in array containing the rangeblock values
+	 */
+	private static int[] getRangeblockRGB(int x, int y, RasterImage image) {
+		int[] rangeblock = new int[blockgroesse * blockgroesse];
+		int i = 0;
+
+		// iterates range block and extracts grey values
+		for (int ry = 0; ry < blockgroesse && y + ry < image.height; ry++) {
+			for (int rx = 0; rx < blockgroesse && x + rx < image.width; rx++) {
+				int value = image.argb[(x + rx) + (y + ry) * image.width];
+				//value = (value >> 16) & 0xff; für grauwert
+				rangeblock[i] = value;
+				i++;
+			}
+		}
+		return rangeblock;
+	}
+
 	/**
 	 * Gets positions x,y and returns the range block starting from these
 	 * coordinates.
@@ -406,14 +574,13 @@ public class FractalCompression {
 		for (int ry = 0; ry < blockgroesse && y + ry < image.height; ry++) {
 			for (int rx = 0; rx < blockgroesse && x + rx < image.width; rx++) {
 				int value = image.argb[(x + rx) + (y + ry) * image.width];
-				//value = (value >> 16) & 0xff; für grauwert
+				value = (value >> 16) & 0xff; 
 				rangeblock[i] = value;
 				i++;
 			}
 		}
 		return rangeblock;
 	}
-
 	/**
 	 * finds the best matching domainblock for the given rangeblock out of a given array of domainblocks
 	 * 
@@ -429,7 +596,7 @@ public class FractalCompression {
 		// iterate domain blocks
 		for (int i = 0; i < domainblocks.length; i++) {
 			// get Aopt and Bopt for currently visited domainblock
-			float[] ab = getContrastAndBrightness(domainblocks[i], rangeblock);
+			float[] ab = getLuminenceAndTransformFactor(domainblocks[i], rangeblock);
 			float error = 0;
 			int[] blockAdjusted = new int[blockgroesse * blockgroesse];
 		
@@ -474,7 +641,7 @@ public class FractalCompression {
 		// iterate domain blocks
 		for (int i = 0; i < domainblocks.length; i++) {
 			// get Aopt and Bopt for currently visited domainblock
-			float[] ab = getContrastAndBrightnessRGB(domainblocks[i], rangeblock);
+			float[] ab = getLuminenceAndTransformFactorRGB(domainblocks[i], rangeblock);
 			//System.out.println(ab[0] + " " + ab[1] + " " + ab[2]+ " "+ ab[3]);
 
 			float error = 0;
@@ -507,7 +674,6 @@ public class FractalCompression {
 			if (error < smallestError) {
 				smallestError = error;
 				float[] temp = { i, ab[0], ab[1], ab[2], ab[3] };
-				//System.out.println(i + " " + ab[0] + " " + ab[1] + " " + ab[2] + " " + ab[3]);
 				bestBlock = temp;
 			}
 		}
@@ -534,7 +700,7 @@ public class FractalCompression {
 	 * @param range
 	 * @return
 	 */
-	private static float[] getContrastAndBrightness(int[] domain, int[] range) {
+	private static float[] getLuminenceAndTransformFactor(int[] domain, int[] range) {
 		int domainM = getMittelwert(domain);
 		int rangeM = getMittelwert(range);
 
@@ -574,7 +740,7 @@ public class FractalCompression {
 	 * @param range
 	 * @return
 	 */
-	private static float[] getContrastAndBrightnessRGB(int[] domain, int[] range) {
+	private static float[] getLuminenceAndTransformFactorRGB(int[] domain, int[] range) {
 		
 		int[] domainR =  getRGB(domain,0); 
 		int[] domainG =  getRGB(domain,1);
@@ -692,7 +858,7 @@ public class FractalCompression {
 		int i = 0;
 		for (int y = 0; y < height; y += blockgroesse) {
 			for (int x = 0; x < width; x += blockgroesse) {
-				int di = getDomainIndex(x, y, rangebloeckePerWidth, rangebloeckePerHeight, domainbloeckePerWidth);
+				int di = getDomainBlockIndex(x, y, rangebloeckePerWidth, rangebloeckePerHeight, domainbloeckePerWidth);
 
 				// calculate kernel start point
 				int dy = (int) (di / domainbloeckePerWidth) - widthKernel / 2;
@@ -988,7 +1154,7 @@ public class FractalCompression {
 	 * @param height
 	 * @return
 	 */
-	public static RasterImage getGreyImage(int width, int height) {
+	public static RasterImage generateGrayImage(int width, int height) {
 		RasterImage image = new RasterImage(width, height);
 		for (int i = 0; i < image.argb.length; i++) {
 			image.argb[i] = 0xff000000 | (128 << 16) | (128 << 8) | 128;

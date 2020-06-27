@@ -10,6 +10,7 @@
 
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.Button?>
+<?import javafx.scene.control.ChoiceBox?>
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.ScrollPane?>
 <?import javafx.scene.control.TitledPane?>
@@ -21,62 +22,49 @@
 <?import javafx.scene.layout.RowConstraints?>
 <?import javafx.scene.layout.VBox?>
 
-<BorderPane maxHeight="580.0" maxWidth="835.0" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="bvk_ss19.RLEAppController">
+<BorderPane maxHeight="580.0" maxWidth="921.0" prefHeight="352.0" prefWidth="921.0" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="bvk_ss19.RLEAppController">
    <center>
       <GridPane hgap="5.0" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" vgap="5.0" BorderPane.alignment="CENTER">
          <columnConstraints>
-            <ColumnConstraints hgrow="ALWAYS" minWidth="10.0" percentWidth="50.0" />
-            <ColumnConstraints hgrow="ALWAYS" minWidth="10.0" percentWidth="50.0" />
+            <ColumnConstraints hgrow="ALWAYS" minWidth="10.0" percentWidth="49.0" prefWidth="100.0" />
+            <ColumnConstraints hgrow="ALWAYS" minWidth="10.0" percentWidth="49.0" />
+            <ColumnConstraints hgrow="ALWAYS" minWidth="10.0" percentWidth="51.0" />
             <ColumnConstraints hgrow="ALWAYS" minWidth="10.0" percentWidth="50.0" />
          </columnConstraints>
          <rowConstraints>
             <RowConstraints minHeight="10.0" vgrow="ALWAYS" />
             <RowConstraints maxHeight="4.0" minHeight="0.0" prefHeight="0.0" vgrow="ALWAYS" />
             <RowConstraints maxHeight="60.0" minHeight="50.0" prefHeight="60.0" valignment="TOP" vgrow="NEVER" />
-            <RowConstraints minHeight="50.0" valignment="TOP" vgrow="NEVER" />
+            <RowConstraints minHeight="50.0" valignment="CENTER" vgrow="NEVER" />
          </rowConstraints>
          <children>
-            <TitledPane collapsible="false" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" text="Source Image">
+             <TitledPane collapsible="false" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" text="Codebuch" GridPane.columnIndex="2">
                <content>
-                  <ScrollPane maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" pannable="true">
-                     <content>
-                        <ImageView fx:id="sourceImageView" pickOnBounds="true" preserveRatio="true" smooth="false" />
-                     </content>
-                  </ScrollPane>
-               </content>
-            </TitledPane>
-             <TitledPane collapsible="false" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" text="Codebuch" GridPane.columnIndex="1">
-               <content>
-                  <ScrollPane maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" pannable="true">
+                  <ScrollPane maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" pannable="true" prefHeight="163.0" prefWidth="301.0">
                      <content>
                         <ImageView fx:id="rleImageView" pickOnBounds="true" preserveRatio="true" smooth="false" />
                      </content>
                   </ScrollPane>
                </content>
             </TitledPane>
-            <VBox spacing="5.0" GridPane.rowIndex="2">
+            <VBox spacing="5.0" GridPane.columnIndex="1" GridPane.rowIndex="2">
                <children>
-                  <Label fx:id="sourceInfoLabel" text="Info Label" />
-                  <HBox spacing="10.0" VBox.vgrow="NEVER">
-                     <children>
-                        <Button mnemonicParsing="false" onAction="#openImage" prefHeight="27.0" text="Open Image" />
-                     </children>
-                  </HBox>
+                  <HBox spacing="10.0" VBox.vgrow="NEVER" />
                </children>
             </VBox>
-            <VBox spacing="5.0" GridPane.columnIndex="1" GridPane.rowIndex="2">
+            <VBox spacing="5.0" GridPane.columnIndex="2" GridPane.rowIndex="2">
                <children>
                   <Label fx:id="rleInfoLabel" text="Info Label" />
                   <Button mnemonicParsing="false" onAction="#openRLEImage" prefHeight="27.0" text="Show Codebuch" />
                </children>
             </VBox>
-            <VBox spacing="5.0" GridPane.columnIndex="2" GridPane.rowIndex="2">
+            <VBox spacing="5.0" GridPane.columnIndex="3" GridPane.rowIndex="2">
                <children>
                   <Label fx:id="mse" text="Info Label" />
                   <Button mnemonicParsing="false" onAction="#openDomainApprox" prefHeight="27.0" prefWidth="174.0" text="decode Image" />
                </children>
             </VBox>
-            <TitledPane collapsible="false" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" text="Decoded Image" GridPane.columnIndex="2">
+            <TitledPane collapsible="false" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" text="Decoded Image" GridPane.columnIndex="3">
                <content>
                   <ScrollPane maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" pannable="true">
                      <content>
@@ -84,7 +72,29 @@
                      </content>
                   </ScrollPane>
                </content>
-            </TitledPane>           
+            </TitledPane>
+            <Label fx:id="mse2" text="Block Size" GridPane.columnIndex="3" GridPane.rowIndex="3" GridPane.valignment="TOP" />
+            <ChoiceBox fx:id="blockSize" accessibleRole="IMAGE_VIEW" onMouseClicked="#adjustBlockSize" prefWidth="150.0" GridPane.columnIndex="3" GridPane.rowIndex="3" GridPane.valignment="BOTTOM" />
+            <TitledPane collapsible="false" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" text="Best Image" GridPane.columnIndex="1">
+               <content>
+                  <ScrollPane maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" pannable="true" prefHeight="163.0" prefWidth="341.0">
+                     <content>
+                        <ImageView fx:id="bestFitCollage" pickOnBounds="true" preserveRatio="true" smooth="false" />
+                     </content>
+                  </ScrollPane>
+               </content>
+            </TitledPane>
+            <TitledPane collapsible="false" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" text="Source Image">
+               <content>
+                  <ScrollPane maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" pannable="true" prefHeight="163.0" prefWidth="135.0">
+                     <content>
+                        <ImageView fx:id="sourceImageView" pickOnBounds="true" preserveRatio="true" smooth="false" />
+                     </content>
+                  </ScrollPane>
+               </content>
+            </TitledPane>
+            <Button mnemonicParsing="false" onAction="#openImage" prefHeight="27.0" text="Open Image" GridPane.rowIndex="2" GridPane.valignment="CENTER" />
+            <Label fx:id="sourceInfoLabel" text="Info Label" GridPane.rowIndex="2" />           
          </children>
       </GridPane>
    </center>
