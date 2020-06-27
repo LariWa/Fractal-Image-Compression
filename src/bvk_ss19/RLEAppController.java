@@ -23,6 +23,15 @@ import javafx.scene.control.Slider;
 import javafx.scene.image.ImageView;
 import javafx.stage.FileChooser;
 
+
+import javafx.application.Application;
+import javafx.geometry.Insets;
+import javafx.scene.Scene;
+import javafx.scene.control.Slider;
+import javafx.scene.layout.HBox;
+import javafx.stage.Stage;
+import javafx.util.StringConverter;
+
 public class RLEAppController {
 	
 	private static final String initialFileName = "LenaGrey.png";
@@ -57,10 +66,44 @@ public class RLEAppController {
     private Label messageLabel;
     
     @FXML
-    private ChoiceBox blockSize;
+    private Slider blockSize;
+    @FXML
+    private Slider searchWidth;
     
     @FXML
     private Label mse;
+    
+    private StringConverter<Double> sliderFormatter = new StringConverter<Double>() {
+        @Override
+        public String toString(Double n) {
+            if (n <= 1) return "2";
+            if (n <= 2) return "4";
+            if (n <= 3) return "8";
+            if (n <= 4) return "16";
+            if (n <= 5) return "32";
+
+
+
+            return "-";
+        }
+
+        @Override
+        public Double fromString(String s) {
+            switch (s) {
+                case "2":
+                    return 2d;
+                case "4":
+                    return 4d;
+                case "8":
+                    return 8d;
+                case "16":
+                    return 16d;
+
+                default:
+                    return 8d;
+            }
+        }
+    };
 
     @FXML
     void openImage() {
@@ -78,7 +121,32 @@ public class RLEAppController {
 	@FXML
 	public void initialize() {
 		loadAndDisplayImage(new File(initialFileName));	
-		loadData();
+		
+		//initialize slider
+		blockSize.valueProperty().addListener(new ChangeListener<Number>() {
+			@Override
+			public void changed(ObservableValue<? extends Number> observable,
+					Number oldValue, Number newValue) {
+				
+				System.out.println(("Slider Value Changed (newValue: " + newValue.intValue() + ")\n"));
+				FractalCompression.blockgroesse= (int) Math.pow(2d, (double) newValue.intValue());
+				openDecodedImage();
+			}
+		});
+		
+		searchWidth.valueProperty().addListener(new ChangeListener<Number>() {
+			@Override
+			public void changed(ObservableValue<? extends Number> observable,
+					Number oldValue, Number newValue) {
+				
+				System.out.println(("Slider Value Changed (newValue: " + newValue.intValue() + ")\n"));
+				FractalCompression.widthKernel= (int) Math.pow(2d, (double) newValue.intValue());
+				openDecodedImage();
+			}
+		});
+		blockSize.setLabelFormatter(sliderFormatter);
+		
+		searchWidth.setLabelFormatter(sliderFormatter);
 	}
 	
 	private void loadAndDisplayImage(File file) {
@@ -125,7 +193,7 @@ public class RLEAppController {
 	
 	@FXML
 	public void adjustBlockSize(){
-		System.out.println(blockSize.getValue().toString());		 
+		System.out.println(blockSize.getValue());		 
 	}
 	
 	private void loadData() {
@@ -137,7 +205,6 @@ public class RLEAppController {
 		int d = 32;
 		
 		list.addAll(a,b,c,d);
-		blockSize.getItems().addAll(list);
 	}
 	
 	

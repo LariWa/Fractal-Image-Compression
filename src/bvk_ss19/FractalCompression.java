@@ -14,8 +14,8 @@ import java.text.DecimalFormat;
 
 public class FractalCompression {
 
-	private static int blockgroesse = 8;
-	private static int widthKernel = 5;
+	public static int blockgroesse = 16;
+	public static int widthKernel = 5;
 
 	private static float[][] imageInfo; //for decoder later as file
 	private static float[][] imageInfoRGB; //for decoder later as file
