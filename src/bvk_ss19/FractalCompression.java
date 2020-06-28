@@ -17,6 +17,9 @@ public class FractalCompression {
 	public static int blockgroesse = 16;
 	public static int widthKernel = 5;
 
+	private static float[][] blockDatatmp;
+	
+	
 	private static float[][] imageInfo; //for decoder later as file
 	private static float[][] imageInfoRGB; //for decoder later as file
 
@@ -54,8 +57,38 @@ public class FractalCompression {
 		if(isGreyScale(input)) return encodeGrayScale(input,out);
 		else return encodeRGB(input,out);
 	}
-	
-	
+			
+	/**
+	 * Gets an array of integers and returns the average value.
+	 * 
+	 * @param values
+	 * @return
+	 */
+	private static int getMittelwert(int[] values) {
+		int sum = 0;
+		for (int value : values) {
+			sum += value;
+		}
+		return sum / values.length;
+	}
+
+	/**
+	 * 		
+	 * @param mittelWert
+	 * @param block
+	 * @return
+	 */
+	public static float getVarianz(int mittelWert, int[] block) {
+		float varianzDomain = 0;
+			for (int i = 0; i < block.length; i++) {
+				// subtract average value from current value
+				float greyD = block[i] - mittelWert;;
+				varianzDomain += greyD;
+			
+			}
+			return varianzDomain;
+	}
+			
 
 	/**
 	 * Applies fractal image compression to a given RasterImage.
@@ -71,8 +104,21 @@ public class FractalCompression {
 		int domainbloeckePerWidth = rangebloeckePerWidth * 2 - 3;
 		int domainbloeckePerHeight = rangebloeckePerHeight * 2 - 3;
 
+
+		
 		// generate codebook to read domain blocks from
 		int[][] codebuch = createCodebuch(input);
+		blockDatatmp = new float[codebuch.length][5];
+
+		
+		for(int i=0; i<codebuch.length;i++) {
+			int mittelWert = getMittelwert(codebuch[i]);
+			blockDatatmp[i][0] = (float)mittelWert;
+			
+			float kovarianz = getVarianz(mittelWert, codebuch[i]);
+			blockDatatmp[i][1] = kovarianz;
+			blockDatatmp[i][2] = kovarianz * kovarianz;
+		}
 		RasterImage dst = new RasterImage(input.width, input.height);
 
 		int j = 0;
@@ -97,18 +143,24 @@ public class FractalCompression {
 
 				//write codebuch entries into kernel array
 				int[][] domainKernel = new int[widthKernel * widthKernel][blockgroesse * blockgroesse];
+				
+				int[] indices = new int[widthKernel * widthKernel];
 				int n = 0;			
 				for (int ky = 0; ky < widthKernel; ky++) {
 					for (int kx = 0; kx < widthKernel; kx++) {
 						int index = dx + kx + (dy + ky) * domainbloeckePerWidth;
 						domainKernel[n] = codebuch[index];
+						indices[n] = index;
 						n++;
 					}
 				}
 				//---------------
 				
 				// apply algorithm based on minimum error to find best fit domain block
-				imageInfo[j] = getBestDomainblock(domainKernel, getRangeblock(x, y, input));	
+				int[] rangeBlock = getRangeblock(x, y, input);
+				int rangeM = getMittelwert(rangeBlock);
+
+				imageInfo[j] = getBestDomainblock(domainKernel,rangeBlock,indices , rangeM);	
 				j++;
 			}
 		}
@@ -319,12 +371,7 @@ public class FractalCompression {
 	}
 	
 	
-	
-	
-	
-	
-	
-	
+
 	/**
 	 * 
 	 * @param inputStream
@@ -585,14 +632,15 @@ public class FractalCompression {
 	 * @param rangeblock
 	 * @return
 	 */
-	private static float[] getBestDomainblock(int[][] domainblocks, int[] rangeblock) {
+	private static float[] getBestDomainblock(int[][] domainblocks, int[] rangeblock, int[] indices, int mittelWertRangeblock) {
 		float smallestError = 10000000;
 		float[] bestBlock = { 0, 0, 0, 0, 0, 0 };
 
 		// iterate domain blocks
 		for (int i = 0; i < domainblocks.length; i++) {
 			// get Aopt and Bopt for currently visited domainblock
-			float[] ab = getErrorVarianceCovariance(domainblocks[i], rangeblock);
+			
+			float[] ab = getErrorVarianceCovariance(indices[i], rangeblock, mittelWertRangeblock);
 			float error = ab[0];
 		
 			// check if current error smaller than previous errors
@@ -653,14 +701,10 @@ public class FractalCompression {
 		// get b
 		float bR = bestBlock[4] - a * bestBlock[5];
 		
-		//System.out.println(bR + " -> bR");
 		float bG = bestBlock[6] - a * bestBlock[7];
 		
-		//System.out.println(bG + " -> bG");
-
 		float bB = bestBlock[8] - a * bestBlock[9];
 		
-		//System.out.println(bB + " -> bB");
 		float[] result = { bestBlock[0], a, bR, bG, bB };
 		return result;
 	}
@@ -685,42 +729,39 @@ public class FractalCompression {
 	 * @param range
 	 * @return
 	 */
-	private static float[] getErrorVarianceCovariance(int[] domain, int[] range) {
-		int domainM = getMittelwert(domain);
-		int rangeM = getMittelwert(range);
+	private static float[] getErrorVarianceCovariance(int codeBuchIndex, int[] range, int rangeMittelwert) {
+		float domainM = blockDatatmp[codeBuchIndex][0];
+		//System.out.println(domainM + " domainM");
 
-		float varianz = 0;
-		float kovarianzSquare = 0;
-		float kovarianzRange = 0;
-		float kovarianzDomain = 0;
+		float kovarianz = 0;
+		float varianzRange = 0;
+
+		float varianzSquare = blockDatatmp[codeBuchIndex][2];
+		//System.out.println(kovarianzSquare + " kovarianzSquare");
+
+		float varianzDomain = blockDatatmp[codeBuchIndex][1];
+		//System.out.println(kovarianzDomain + " kovarianzDomain");
+
      
 
 		// iterate domain block
-		for (int i = 0; i < domain.length; i++) {
+		for (int i = 0; i < range.length; i++) {
 			// subtract average value from current value
-			float greyD = domain[i] - domainM;
-			float greyR = range[i] - rangeM;
+			float greyR = range[i] - rangeMittelwert;
 
-			// calculate variance, covariance
-			varianz += greyR * greyD;
-			kovarianzSquare += greyD * greyD;
-			kovarianzRange += greyR;
-			kovarianzDomain += greyD;
+			varianzRange += greyR;
 			
 		}
      
 		float r = 0;
 		float error = 0;
 
+		kovarianz = varianzRange *  varianzDomain;
 		
-		if(kovarianzRange == 0 || kovarianzDomain == 0) r = 0;
-		else r = varianz / (kovarianzRange * kovarianzDomain);
-
+		if(varianzSquare == 0) error = 0;
+		else error = (varianzRange * varianzRange) - ((kovarianz*kovarianz) / varianzSquare);
 		
-		r = r * r;
-		error = (kovarianzRange * kovarianzRange) * (1 - r);
-	
-		float[] result = { error, varianz, kovarianzSquare, rangeM, domainM};
+		float[] result = { error, kovarianz, varianzSquare, rangeMittelwert, domainM};
 		return result;
 	}
 
@@ -811,19 +852,6 @@ public class FractalCompression {
 		}
 		
 		return temp;
-	}
-	/**
-	 * Gets an array of integers and returns the average value.
-	 * 
-	 * @param values
-	 * @return
-	 */
-	private static int getMittelwert(int[] values) {
-		int sum = 0;
-		for (int value : values) {
-			sum += value;
-		}
-		return sum / values.length;
 	}
 
 	/**
@@ -1019,7 +1047,7 @@ public class FractalCompression {
 		// generated codebook size
 		int[][] codebuch = new int[(image.width / abstand - 3) * (image.height / abstand - 3)][blockgroesse
 				* blockgroesse];
-
+		
 		int i = 0;
 
 		// iterate image
@@ -1037,6 +1065,7 @@ public class FractalCompression {
 					}
 					// map domainblock pixel values to domainblock index
 					codebuch[i] = codebuchblock;
+					
 					i++;
 				}
 			}
@@ -1044,7 +1073,7 @@ public class FractalCompression {
 		return codebuch;
 	}
 
-	
+
 	
 	
 	
