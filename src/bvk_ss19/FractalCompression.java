@@ -460,10 +460,6 @@ public class FractalCompression {
 								int valueG = (int) (imgData[i][1] * domainG + imgData[i][3]);
 								int valueB = (int) (imgData[i][1] * domainB + imgData[i][4]);
 
-								//System.out.println(imgData[i][2] + " " + imgData[i][3] + " " + imgData[i][4]);
-								//System.out.println(imgData[i][1]);
-
-								// apply thresshold
 								
 								valueR = applyThreshold(valueR);
 								valueG = applyThreshold(valueG);
@@ -525,7 +521,7 @@ public class FractalCompression {
 		}
 		return i;
 	}
-
+ 
 	public static RasterImage decode(DataInputStream inputStream) throws Exception{
 		int isGreyScale = inputStream.readInt();
 		if(isGreyScale == 0) return decodeGreyScale(inputStream);
@@ -591,39 +587,32 @@ public class FractalCompression {
 	 */
 	private static float[] getBestDomainblock(int[][] domainblocks, int[] rangeblock) {
 		float smallestError = 10000000;
-		float[] bestBlock = { 0, 0, 0 };
+		float[] bestBlock = { 0, 0, 0, 0, 0, 0 };
 
 		// iterate domain blocks
 		for (int i = 0; i < domainblocks.length; i++) {
 			// get Aopt and Bopt for currently visited domainblock
-			float[] ab = getLuminenceAndTransformFactor(domainblocks[i], rangeblock);
-			float error = 0;
-			int[] blockAdjusted = new int[blockgroesse * blockgroesse];
+			float[] ab = getErrorVarianceCovariance(domainblocks[i], rangeblock);
+			float error = ab[0];
 		
-
-			for (int j = 0; j < blockgroesse * blockgroesse; j++) {//iterates through domainblock
-				// get domain values adjusted by Aopt and Bopt for error calculation
-				int domainValue = (int) (ab[0] * domainblocks[i][j] + ab[1]);
-
-				// apply threshold
-				if (domainValue < 0)
-					domainValue = 0;
-				else if (domainValue > 255)
-					domainValue = 255;
-
-				error += (rangeblock[j] - domainValue) * (rangeblock[j] - domainValue);
-				// blockAdjusted[j] = domainValue;
-				
-			}
-
 			// check if current error smaller than previous errors
 			if (error < smallestError) {
 				smallestError = error;
-				float[] temp = { i, ab[0], ab[1] };
+				float[] temp = { i, ab[0], ab[1], ab[2], ab[3], ab[4] };
 				bestBlock = temp;
 			}
 		}
-		return bestBlock;
+		
+		float a = bestBlock[2] / bestBlock[3] ;
+		
+		if(a < -1) a = -1;
+		else if (a > 1) a = 1;
+		
+	    float b = bestBlock[4] - a* bestBlock[5];
+	    
+	    		
+	    float[] result = { bestBlock[0], a, b};		
+		return result;
 	}
 
 	/**
@@ -636,48 +625,44 @@ public class FractalCompression {
 	 */
 	private static float[] getBestDomainblockRGB(int[][] domainblocks, int[] rangeblock) {
 		float smallestError = 10000000;
-		float[] bestBlock = { 0, 0, 0, 0, 0 };
+		float[] bestBlock = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 
 		// iterate domain blocks
 		for (int i = 0; i < domainblocks.length; i++) {
 			// get Aopt and Bopt for currently visited domainblock
-			float[] ab = getLuminenceAndTransformFactorRGB(domainblocks[i], rangeblock);
-			//System.out.println(ab[0] + " " + ab[1] + " " + ab[2]+ " "+ ab[3]);
+			float[] ab = getErrorVarianceCovarianceRGB(domainblocks[i], rangeblock);
 
-			float error = 0;
-			int[] blockAdjusted = new int[blockgroesse * blockgroesse];
-
-			for (int j = 0; j < blockgroesse * blockgroesse; j++) {//iterates through domainblock
-				// get domain values adjusted by Aopt and Bopt for error calculation
-				int domainValueR = (int) (ab[0] * ((domainblocks[i][j] >> 16) & 0xff) + ab[1]);
-				int domainValueG = (int) (ab[0] * ((domainblocks[i][j]  >> 8) & 0xff) + ab[2]);
-				int domainValueB = (int) (ab[0] * (domainblocks[i][j] & 0xff) + ab[3]);
-
-				int rangeR = (rangeblock[j] >> 16) & 0xff;
-				int rangeG = (rangeblock[j] >> 8) & 0xff;
-				int rangeB = rangeblock[j] & 0xff;
-				
-
-				// apply threshold
-				domainValueR = applyThreshold(domainValueR);
-				domainValueG = applyThreshold(domainValueG);
-				domainValueB = applyThreshold(domainValueB);
-
-
-				error += (rangeR - domainValueR) * (rangeR - domainValueR) + 
-						 (rangeG - domainValueG) * (rangeG - domainValueG) +
-						 (rangeB - domainValueB) * (rangeB - domainValueB);
-				
-			}
+			float error = ab[0];
 
 			// check if current error smaller than previous errors
 			if (error < smallestError) {
 				smallestError = error;
-				float[] temp = { i, ab[0], ab[1], ab[2], ab[3] };
+				float[] temp = { i, ab[0], ab[1], ab[2], ab[3], ab[4], ab[5], ab[6], ab[7], ab[8] };
 				bestBlock = temp;
 			}
 		}
-		return bestBlock;
+		
+
+		// get a
+		float a = bestBlock[2] / bestBlock[3];
+
+		// apply threshold
+		if (a > 1)	a = 1;
+		if (a < -1)	a = -1;
+
+		// get b
+		float bR = bestBlock[4] - a * bestBlock[5];
+		
+		//System.out.println(bR + " -> bR");
+		float bG = bestBlock[6] - a * bestBlock[7];
+		
+		//System.out.println(bG + " -> bG");
+
+		float bB = bestBlock[8] - a * bestBlock[9];
+		
+		//System.out.println(bB + " -> bB");
+		float[] result = { bestBlock[0], a, bR, bG, bB };
+		return result;
 	}
 	
 	/**
@@ -700,12 +685,15 @@ public class FractalCompression {
 	 * @param range
 	 * @return
 	 */
-	private static float[] getLuminenceAndTransformFactor(int[] domain, int[] range) {
+	private static float[] getErrorVarianceCovariance(int[] domain, int[] range) {
 		int domainM = getMittelwert(domain);
 		int rangeM = getMittelwert(range);
 
 		float varianz = 0;
-		float kovarianz = 0;
+		float kovarianzSquare = 0;
+		float kovarianzRange = 0;
+		float kovarianzDomain = 0;
+     
 
 		// iterate domain block
 		for (int i = 0; i < domain.length; i++) {
@@ -715,21 +703,24 @@ public class FractalCompression {
 
 			// calculate variance, covariance
 			varianz += greyR * greyD;
-			kovarianz += greyD * greyD;
+			kovarianzSquare += greyD * greyD;
+			kovarianzRange += greyR;
+			kovarianzDomain += greyD;
+			
 		}
+     
+		float r = 0;
+		float error = 0;
 
-		// get a
-		float a = varianz / kovarianz;
+		
+		if(kovarianzRange == 0 || kovarianzDomain == 0) r = 0;
+		else r = varianz / (kovarianzRange * kovarianzDomain);
 
-		// apply threshold
-		if (a > 1)
-			a = 1;
-		if (a < -1)
-			a = -1;
-
-		// get b
-		float b = rangeM - a * domainM;
-		float[] result = { a, b };
+		
+		r = r * r;
+		error = (kovarianzRange * kovarianzRange) * (1 - r);
+	
+		float[] result = { error, varianz, kovarianzSquare, rangeM, domainM};
 		return result;
 	}
 
@@ -740,7 +731,7 @@ public class FractalCompression {
 	 * @param range
 	 * @return
 	 */
-	private static float[] getLuminenceAndTransformFactorRGB(int[] domain, int[] range) {
+	private static float[] getErrorVarianceCovarianceRGB(int[] domain, int[] range) {
 		
 		int[] domainR =  getRGB(domain,0); 
 		int[] domainG =  getRGB(domain,1);
@@ -755,7 +746,9 @@ public class FractalCompression {
 		int rangeM = getMittelwert(range);
 
 		float varianz = 0;
-		float kovarianz = 0;
+		float kovarianzSquare = 0;
+		float kovarianzRange = 0;
+		float kovarianzDomain = 0;
 
 		// iterate domain block
 		for (int i = 0; i < domain.length; i++) {
@@ -765,32 +758,24 @@ public class FractalCompression {
 
 			// calculate variance, covariance
 			varianz += greyR * greyD;
-			kovarianz += greyD * greyD;
+			kovarianzSquare += greyD * greyD;
+			kovarianzRange += greyR;
+			kovarianzDomain += greyD;
 		}
-
-		// get a
-		float a = varianz / kovarianz;
-
-		// apply threshold
-		if (a > 1)
-			a = 1;
-		if (a < -1)
-			a = -1;
-
-		// get b
-		float bR = getMittelwert(rangeR) - a * getMittelwert(domainR);
 		
-		//System.out.println(bR + " -> bR");
-		float bG = getMittelwert(rangeG) - a * getMittelwert(domainG);
+		float r = 0;
+		float error = 0;
+
 		
-		//System.out.println(bG + " -> bG");
+		if(kovarianzRange == 0 || kovarianzDomain == 0) r = 0;
+		else r = varianz / (kovarianzRange * kovarianzDomain);
 
-		float bB = getMittelwert(rangeB) - a * getMittelwert(domainB);
 		
-		//System.out.println(bB + " -> bB");
+		r = r * r;
+		error = (kovarianzRange * kovarianzRange) * (1 - r);
 
-
-		float[] result = { a, bR, bG, bB };
+		float[] result = { error, varianz, kovarianzSquare, getMittelwert(rangeR), getMittelwert(domainR), getMittelwert(rangeG),
+						   getMittelwert(domainG), getMittelwert(rangeB), getMittelwert(domainB)  };
 		return result;
 	}
 	

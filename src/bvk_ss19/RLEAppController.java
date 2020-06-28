@@ -196,18 +196,6 @@ public class RLEAppController {
 		System.out.println(blockSize.getValue());		 
 	}
 	
-	private void loadData() {
-		list.removeAll(list);
-		
-		int a = 4;
-		int b = 8;
-		int c = 16;
-		int d = 32;
-		
-		list.addAll(a,b,c,d);
-	}
-	
-	
 	
 	}
 
