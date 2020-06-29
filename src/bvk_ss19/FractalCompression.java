@@ -17,7 +17,8 @@ public class FractalCompression {
 	public static int blockgroesse = 16;
 	public static int widthKernel = 5;
 
-	private static float[][] blockDatatmp;
+	private static float[][] blockDatatmpRGB;
+
 	
 	
 	private static float[][] imageInfo; //for decoder later as file
@@ -78,12 +79,12 @@ public class FractalCompression {
 	 * @param block
 	 * @return
 	 */
-	public static float getVarianz(int mittelWert, int[] block) {
+	public static float getVarianz(int mittelWert, int[] block) {		
 		float varianzDomain = 0;
 			for (int i = 0; i < block.length; i++) {
 				// subtract average value from current value
 				float greyD = block[i] - mittelWert;;
-				varianzDomain += greyD;
+				varianzDomain += greyD*greyD;
 			
 			}
 			return varianzDomain;
@@ -107,18 +108,8 @@ public class FractalCompression {
 
 		
 		// generate codebook to read domain blocks from
-		int[][] codebuch = createCodebuch(input);
-		blockDatatmp = new float[codebuch.length][5];
+		Domainblock[] codebuch = createCodebuch(input);
 
-		
-		for(int i=0; i<codebuch.length;i++) {
-			int mittelWert = getMittelwert(codebuch[i]);
-			blockDatatmp[i][0] = (float)mittelWert;
-			
-			float kovarianz = getVarianz(mittelWert, codebuch[i]);
-			blockDatatmp[i][1] = kovarianz;
-			blockDatatmp[i][2] = kovarianz * kovarianz;
-		}
 		RasterImage dst = new RasterImage(input.width, input.height);
 
 		int j = 0;
@@ -142,7 +133,7 @@ public class FractalCompression {
 					dy = domainbloeckePerHeight - widthKernel;
 
 				//write codebuch entries into kernel array
-				int[][] domainKernel = new int[widthKernel * widthKernel][blockgroesse * blockgroesse];
+				Domainblock[] domainKernel = new Domainblock[widthKernel * widthKernel];
 				
 				int[] indices = new int[widthKernel * widthKernel];
 				int n = 0;			
@@ -201,8 +192,21 @@ public class FractalCompression {
 		int domainbloeckePerHeight = rangebloeckePerHeight * 2 - 3;
 
 		// generate codebook to read domain blocks from
-		int[][] codebuch = createCodebuchRGB(input);
+		Domainblock[] codebuch = createCodebuchRGB(input);
 		RasterImage dst = new RasterImage(input.width, input.height);
+		
+		blockDatatmpRGB = new float[codebuch.length][6];
+		for(int i=0; i<codebuch.length;i++) {
+			int mittelWertR = getMittelwert(codebuch[i].argb);
+			blockDatatmpRGB[i][0] = (float)mittelWertR;
+			
+			blockDatatmpRGB[i][1] = getMittelwert(getRGB(codebuch[i].argb,0));
+			blockDatatmpRGB[i][2] = getMittelwert(getRGB(codebuch[i].argb,1));
+			blockDatatmpRGB[i][3] = getMittelwert(getRGB(codebuch[i].argb,2));
+			
+			blockDatatmpRGB[i][4] = getVarianz(getMittelwert(codebuch[i].argb),codebuch[i].argb);
+			blockDatatmpRGB[i][5] = (float) Math.sqrt(blockDatatmpRGB[i][4]);
+		}
 
 		int j = 0;
 		imageInfoRGB = new float[rangebloeckePerWidth*rangebloeckePerHeight][5];//for decoder later write to file
@@ -224,20 +228,22 @@ public class FractalCompression {
 				if (dy + widthKernel >= domainbloeckePerHeight)
 					dy = domainbloeckePerHeight - widthKernel;
 
+				int[] indices = new int[widthKernel * widthKernel];
 				//write codebuch entries into kernel array
-				int[][] domainKernel = new int[widthKernel * widthKernel][blockgroesse * blockgroesse];
+				Domainblock[] domainKernel = new Domainblock[widthKernel * widthKernel];
 				int n = 0;			
 				for (int ky = 0; ky < widthKernel; ky++) {
 					for (int kx = 0; kx < widthKernel; kx++) {
 						int index = dx + kx + (dy + ky) * domainbloeckePerWidth;
 						domainKernel[n] = codebuch[index];
+						indices[n] = index;
 						n++;
 					}
 				}
-				//---------------
+								//---------------
 				
 				// apply algorithm based on minimum error to find best fit domain block
-				imageInfoRGB[j] = getBestDomainblockRGB(domainKernel, getRangeblockRGB(x, y, input));	
+				imageInfoRGB[j] = getBestDomainblockRGB(domainKernel, getRangeblockRGB(x, y, input), indices);	
 				j++;
 			}
 		}
@@ -277,7 +283,7 @@ public class FractalCompression {
 
 		// make iterations for image reconstruction
 		for (int counter = 0; counter < 50; counter++) {
-			int[][] codebuch = createCodebuch(image); // get codebook
+			Domainblock[] codebuch = createCodebuch(image); // get codebook
 			int i = 0;
 
 			// iterate image per rangeblock
@@ -289,7 +295,7 @@ public class FractalCompression {
 							int range = (image.argb[x + rx + (y + ry) * image.width] >> 16) & 0xff; // get current value
 																									// of rangeblock
 							// get current value of best fit domainblock pixel
-							int domain = codebuch[(int) imageInfo[i][0]][rx + ry * blockgroesse];
+							int domain = codebuch[(int) imageInfo[i][0]].argb[rx + ry * blockgroesse];
 							int value = (int) (imageInfo[i][1] * domain + imageInfo[i][2]);
 
 							// apply thresshold
@@ -327,7 +333,7 @@ public class FractalCompression {
 
 		// make iterations for image reconstruction
 		for (int counter = 0; counter < 50; counter++) {
-			int[][] codebuch = createCodebuchRGB(image); // get codebook
+			Domainblock[] codebuch = createCodebuchRGB(image); // get codebook
 			int i = 0;
 
 			// iterate image per rangeblock
@@ -336,14 +342,9 @@ public class FractalCompression {
 					// iterate rangeblock
 					for (int ry = 0; ry < blockgroesse && y + ry < image.height; ry++) {
 						for (int rx = 0; rx < blockgroesse && x + rx < image.width; rx++) {
-							int rangeR = (image.argb[x + rx + (y + ry) * image.width] >> 16) & 0xff; // get current value of rangeblock
-							int rangeG = (image.argb[x + rx + (y + ry) * image.width] >> 8) & 0xff; // get current value of rangeblock
-							int rangeB = image.argb[x + rx + (y + ry) * image.width]  & 0xff; // get current value of rangeblock
-							
-							
 							
 							// get current value of best fit domainblock pixel
-							int domain = codebuch[(int) imageInfoRGB[i][0]][rx + ry * blockgroesse];
+							int domain = codebuch[(int) imageInfoRGB[i][0]].argb[rx + ry * blockgroesse];
 							int domainR = (domain >> 16) & 0xff;
 							int domainG = (domain >> 8) & 0xff;
 							int domainB = domain & 0xff;
@@ -404,7 +405,7 @@ public class FractalCompression {
 
 			// make iterations for image reconstruction
 			for (int counter = 0; counter < 50; counter++) {
-				int[][] codebuch = createCodebuch(image); // get codebook
+				Domainblock[] codebuch = createCodebuch(image); // get codebook
 				int i = 0;
 
 				// iterate image per rangeblock
@@ -416,7 +417,8 @@ public class FractalCompression {
 								int range = (image.argb[x + rx + (y + ry) * image.width] >> 16) & 0xff; // get current value
 																										// of rangeblock
 								// get current value of best fit domainblock pixel
-								int domain = codebuch[(int) imgData[i][0]][rx + ry * inputedBlockgroesse];
+								int domain = codebuch[(int) imgData[i][0]].argb[rx + ry * inputedBlockgroesse];
+								
 								int value = (int) (imgData[i][1] * domain + imgData[i][2]);
 
 								// apply thresshold
@@ -425,8 +427,7 @@ public class FractalCompression {
 								else if (value > 255)
 									value = 255;
 
-								image.argb[x + rx + (y + ry) * image.width] = 0xff000000 | (value << 16) | (value << 8)
-										| value;
+								image.argb[x + rx + (y + ry) * image.width] = 0xff000000 | (value << 16) | (value << 8)| value;
 
 								avgError += (range - value) * (range - value); // calculate error
 							}
@@ -482,7 +483,7 @@ public class FractalCompression {
 
 			// make iterations for image reconstruction
 			for (int counter = 0; counter < 50; counter++) {
-				int[][] codebuch = createCodebuchRGB(image); // get codebook
+				Domainblock[] codebuch = createCodebuchRGB(image); // get codebook
 				int i = 0;
 
 				// iterate image per rangeblock
@@ -498,7 +499,7 @@ public class FractalCompression {
 								
 								
 								// get current value of best fit domainblock pixel
-								int domain = codebuch[(int) imgData[i][0]][rx + ry * inputedBlockgroesse];
+								int domain = codebuch[(int) imgData[i][0]].argb[rx + ry * inputedBlockgroesse];
 								int domainR = (domain >> 16) & 0xff;
 								int domainG = (domain >> 8) & 0xff;
 								int domainB = domain & 0xff;
@@ -540,8 +541,8 @@ public class FractalCompression {
 	 */
 	private static int getDomainBlockIndex(int x, int y, int rangebloeckePerWidth, int rangebloeckePerHeight,
 			int domainbloeckePerWidth) {
-		int xr = x / 8;
-		int yr = y / 8;
+		int xr = x / blockgroesse;
+		int yr = y / blockgroesse;
 		int i = 0;
 		// Randbehandlung -------------------//
 		if (yr == 0)
@@ -632,7 +633,7 @@ public class FractalCompression {
 	 * @param rangeblock
 	 * @return
 	 */
-	private static float[] getBestDomainblock(int[][] domainblocks, int[] rangeblock, int[] indices, int mittelWertRangeblock) {
+	private static float[] getBestDomainblock(Domainblock[] domainblocks, int[] rangeblock, int[] indices, int mittelWertRangeblock) {
 		float smallestError = 10000000;
 		float[] bestBlock = { 0, 0, 0, 0, 0, 0 };
 
@@ -640,7 +641,7 @@ public class FractalCompression {
 		for (int i = 0; i < domainblocks.length; i++) {
 			// get Aopt and Bopt for currently visited domainblock
 			
-			float[] ab = getErrorVarianceCovariance(indices[i], rangeblock, mittelWertRangeblock);
+			float[] ab = getErrorVarianceCovariance(indices[i], rangeblock, mittelWertRangeblock, domainblocks[i].argb, domainblocks[i]);
 			float error = ab[0];
 		
 			// check if current error smaller than previous errors
@@ -653,13 +654,57 @@ public class FractalCompression {
 		
 		float a = bestBlock[2] / bestBlock[3] ;
 		
+		
 		if(a < -1) a = -1;
 		else if (a > 1) a = 1;
 		
 	    float b = bestBlock[4] - a* bestBlock[5];
-	    
+		//System.out.println(b + " a");
+
 	    		
 	    float[] result = { bestBlock[0], a, b};		
+		return result;
+	}
+	
+	/**
+	 * Calculates a and b luminence factors
+	 * 
+	 * @param domain
+	 * @param range
+	 * @return
+	 */
+	private static float[] getErrorVarianceCovariance(int codeBuchIndex, int[] range, int rangeMittelwert, int[] domain,Domainblock domainblock) {
+		float domainM = domainblock.mittelWert;
+		//System.out.println(domainM + " domainM");
+
+		float kovarianz = 0;
+		float varianzRange = 0;
+
+		float varianzSquare = domainblock.variance;
+     
+
+		// iterate domain block
+		for (int i = 0; i < range.length; i++) {
+			// subtract average value from current value
+			float greyR = range[i] - rangeMittelwert;
+			float greyD = domain[i] - domainM;
+
+			kovarianz += greyR * greyD;
+			varianzRange += greyR;
+		}
+     
+		float r = 0;
+		float error = 0;
+
+		
+		if(varianzRange == 0 || Math.sqrt(varianzSquare) == 0) r = 0;
+		else r = (float) (kovarianz / (varianzRange * Math.sqrt(varianzSquare)));
+
+		
+		r = r * r;
+		error = (varianzRange * varianzRange) * (1 - r);
+		
+		float[] result = { error, kovarianz, varianzSquare, rangeMittelwert, domainM};
 		return result;
 	}
 
@@ -671,14 +716,14 @@ public class FractalCompression {
 	 * @param rangeblock
 	 * @return
 	 */
-	private static float[] getBestDomainblockRGB(int[][] domainblocks, int[] rangeblock) {
+	private static float[] getBestDomainblockRGB(Domainblock[] domainblocks, int[] rangeblock, int[] indices) {
 		float smallestError = 10000000;
 		float[] bestBlock = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 
 		// iterate domain blocks
 		for (int i = 0; i < domainblocks.length; i++) {
 			// get Aopt and Bopt for currently visited domainblock
-			float[] ab = getErrorVarianceCovarianceRGB(domainblocks[i], rangeblock);
+			float[] ab = getErrorVarianceCovarianceRGB(domainblocks[i].argb, rangeblock, indices[i], domainblocks[i]);
 
 			float error = ab[0];
 
@@ -693,7 +738,7 @@ public class FractalCompression {
 
 		// get a
 		float a = bestBlock[2] / bestBlock[3];
-
+		
 		// apply threshold
 		if (a > 1)	a = 1;
 		if (a < -1)	a = -1;
@@ -722,48 +767,7 @@ public class FractalCompression {
 		return pixelValue;
 	}
 	
-	/**
-	 * Calculates a and b luminence factors
-	 * 
-	 * @param domain
-	 * @param range
-	 * @return
-	 */
-	private static float[] getErrorVarianceCovariance(int codeBuchIndex, int[] range, int rangeMittelwert) {
-		float domainM = blockDatatmp[codeBuchIndex][0];
-		//System.out.println(domainM + " domainM");
-
-		float kovarianz = 0;
-		float varianzRange = 0;
-
-		float varianzSquare = blockDatatmp[codeBuchIndex][2];
-		//System.out.println(kovarianzSquare + " kovarianzSquare");
-
-		float varianzDomain = blockDatatmp[codeBuchIndex][1];
-		//System.out.println(kovarianzDomain + " kovarianzDomain");
-
-     
-
-		// iterate domain block
-		for (int i = 0; i < range.length; i++) {
-			// subtract average value from current value
-			float greyR = range[i] - rangeMittelwert;
-
-			varianzRange += greyR;
-			
-		}
-     
-		float r = 0;
-		float error = 0;
-
-		kovarianz = varianzRange *  varianzDomain;
-		
-		if(varianzSquare == 0) error = 0;
-		else error = (varianzRange * varianzRange) - ((kovarianz*kovarianz) / varianzSquare);
-		
-		float[] result = { error, kovarianz, varianzSquare, rangeMittelwert, domainM};
-		return result;
-	}
+	
 
 	/**
 	 * Calculates a and b luminence factors
@@ -772,51 +776,52 @@ public class FractalCompression {
 	 * @param range
 	 * @return
 	 */
-	private static float[] getErrorVarianceCovarianceRGB(int[] domain, int[] range) {
+	private static float[] getErrorVarianceCovarianceRGB(int[] domain, int[] range, int index, Domainblock domainblock) {
 		
-		int[] domainR =  getRGB(domain,0); 
-		int[] domainG =  getRGB(domain,1);
-		int[] domainB =  getRGB(domain,2);
+		float domainR =  domainblock.mittelWertR;  
+		float domainG =  domainblock.mittelWertG;
+		float domainB =  domainblock.mittelWertB;
 
 		int[] rangeR =   getRGB(range,0);
 		int[] rangeG =   getRGB(range,1);
 		int[] rangeB =   getRGB(range,2);
 		
-		
-		int domainM = getMittelwert(domain);
+		float domainM = domainblock.mittelWert;
 		int rangeM = getMittelwert(range);
 
-		float varianz = 0;
-		float kovarianzSquare = 0;
-		float kovarianzRange = 0;
-		float kovarianzDomain = 0;
+		float kovarianz = 0;
+		float varianzSquare =  domainblock.variance;
+		float varianzRange = 0;
+		float varianzDomain =  (float) Math.sqrt(domainblock.variance);
 
+		//float varianzDomain =  0;
+		
 		// iterate domain block
-		for (int i = 0; i < domain.length; i++) {
+		for (int i = 0; i < range.length; i++) {
 			// subtract average value from current value
-			float greyD = domain[i] - domainM;
+			float greyD = range[i] - domainM;
 			float greyR = range[i] - rangeM;
 
 			// calculate variance, covariance
-			varianz += greyR * greyD;
-			kovarianzSquare += greyD * greyD;
-			kovarianzRange += greyR;
-			kovarianzDomain += greyD;
+			kovarianz += greyR * greyD;
+			//varianzSquare += greyD * greyD;
+			varianzRange += greyR;
+			varianzDomain += greyD;
 		}
 		
 		float r = 0;
 		float error = 0;
 
-		
-		if(kovarianzRange == 0 || kovarianzDomain == 0) r = 0;
-		else r = varianz / (kovarianzRange * kovarianzDomain);
+		//System.out.println(varianzSquare);
+		if(varianzRange == 0 || varianzDomain == 0) r = 0;
+		else r = kovarianz / (varianzRange * varianzDomain);
 
 		
 		r = r * r;
-		error = (kovarianzRange * kovarianzRange) * (1 - r);
+		error = (varianzRange * varianzRange) * (1 - r);
 
-		float[] result = { error, varianz, kovarianzSquare, getMittelwert(rangeR), getMittelwert(domainR), getMittelwert(rangeG),
-						   getMittelwert(domainG), getMittelwert(rangeB), getMittelwert(domainB)  };
+		float[] result = { error, kovarianz, varianzSquare, getMittelwert(rangeR), domainR, getMittelwert(rangeG),
+			               domainG, getMittelwert(rangeB), domainB  };
 		return result;
 	}
 	
@@ -1038,21 +1043,21 @@ public class FractalCompression {
 	 * @param image RasterImage to be processed
 	 * @return codebook array
 	 */
-	private static int[][] createCodebuch(RasterImage image) {
+	private static Domainblock[] createCodebuch(RasterImage image) {
 
 		// scale image by factor 2
 		image = scaleImage(image);
 		int abstand = blockgroesse / 4;
 
 		// generated codebook size
-		int[][] codebuch = new int[(image.width / abstand - 3) * (image.height / abstand - 3)][blockgroesse
-				* blockgroesse];
+		Domainblock[] codebuch = new Domainblock[(image.width / abstand - 3) * (image.height / abstand - 3)];
 		
 		int i = 0;
 
 		// iterate image
 		for (int y = 0; y < image.height; y += abstand) {
 			for (int x = 0; x < image.width; x += abstand) {
+				
 				int[] codebuchblock = new int[blockgroesse * blockgroesse];
 				// iterate domainblock
 				if (y + blockgroesse <= image.height && x + blockgroesse <= image.width) {
@@ -1064,7 +1069,9 @@ public class FractalCompression {
 						}
 					}
 					// map domainblock pixel values to domainblock index
-					codebuch[i] = codebuchblock;
+					
+					Domainblock domainBlock = new Domainblock(codebuchblock,false);
+					codebuch[i] = domainBlock;
 					
 					i++;
 				}
@@ -1084,14 +1091,14 @@ public class FractalCompression {
 	 * @param image RasterImage to be processed
 	 * @return codebook array
 	 */
-	private static int[][] createCodebuchRGB(RasterImage image) {
+	private static Domainblock[] createCodebuchRGB(RasterImage image) {
 
 		// scale image by factor 2
 		image = scaleImageRGB(image);
 		int abstand = blockgroesse / 4;
 
 		// generated codebook size
-		int[][] codebuch = new int[(image.width / abstand - 3) * (image.height / abstand - 3)][blockgroesse * blockgroesse];
+		Domainblock[] codebuch = new Domainblock[(image.width / abstand - 3) * (image.height / abstand - 3)];
 
 		int i = 0;
 
@@ -1112,7 +1119,8 @@ public class FractalCompression {
 						}
 					}
 					// map domainblock pixel values to domainblock index
-					codebuch[i] = codebuchblock;
+					Domainblock domainBlock = new Domainblock(codebuchblock,true);
+					codebuch[i] = domainBlock;
 					i++;
 				}
 			}
@@ -1134,7 +1142,7 @@ public class FractalCompression {
 		int domainbloeckePerWidth = rangebloeckePerWidth * 2 - 3;
 		int domainbloeckePerHeight = rangebloeckePerHeight * 2 - 3;
 		// generate codebook
-		int[][] codebuch = createCodebuchRGB(image);
+		Domainblock[] codebuch = createCodebuchRGB(image);
 		int i = 0;
 
 		// generate image to display
@@ -1147,12 +1155,11 @@ public class FractalCompression {
 					for (int rx = 0; rx < blockgroesse && x + rx < codebuchImage.width; rx++) {
 						//int value = codebuch[i][rx + ry * blockgroesse];
 						
-						int valueR = (codebuch[i][rx + ry * blockgroesse] >> 16) & 0xff;
-						int valueG = (codebuch[i][rx + ry * blockgroesse] >> 8) & 0xff;
-						int valueB = codebuch[i][rx + ry * blockgroesse] & 0xff;
+						int valueR = (codebuch[i].argb[rx + ry * blockgroesse] >> 16) & 0xff;
+						int valueG = (codebuch[i].argb[rx + ry * blockgroesse] >> 8) & 0xff;
+						int valueB =  codebuch[i].argb[rx + ry * blockgroesse] & 0xff;
 						
-						codebuchImage.argb[x + rx + (y + ry) * codebuchImage.width] = 0xff000000 | (valueR << 16)
-								| (valueG << 8) | valueB;
+						codebuchImage.argb[x + rx + (y + ry) * codebuchImage.width] = 0xff000000 | (valueR << 16) | (valueG << 8) | valueB;
 					}
 				}
 				i++;
