@@ -14,11 +14,8 @@ import java.text.DecimalFormat;
 
 public class FractalCompression {
 
-	public static int blockgroesse = 16;
+	public static int blockgroesse = 8;
 	public static int widthKernel = 5;
-
-	private static float[][] blockDatatmpRGB;
-
 	
 	
 	private static float[][] imageInfo; //for decoder later as file
@@ -31,7 +28,11 @@ public class FractalCompression {
 		return avgError;
 	}
 	
-	
+	/**
+	 * 
+	 * @param input
+	 * @return
+	 */
 	public static boolean isGreyScale(RasterImage input){
 		for(int y=0;y<input.height;y++) {
 			for(int x=0;x<input.width;x++) {
@@ -52,9 +53,9 @@ public class FractalCompression {
 	 * 
 	 * @param input
 	 * @param out
-	 * @throws IOException
+	 * @throws Exception 
 	 */
-	public static RasterImage encode(RasterImage input,DataOutputStream out) throws IOException  {
+	public static RasterImage encode(RasterImage input,DataOutputStream out) throws Exception  {
 		if(isGreyScale(input)) return encodeGrayScale(input,out);
 		else return encodeRGB(input,out);
 	}
@@ -90,13 +91,39 @@ public class FractalCompression {
 			return varianzDomain;
 	}
 			
+	/**
+	 * 
+	 * @param domainbloeckePerWidth
+	 * @param domainbloeckePerHeight
+	 * @param index
+	 * @return
+	 */
+	public static int[] generateKernel(int domainbloeckePerWidth, int domainbloeckePerHeight, int index ) {
+
+		// create domainblock kernel-------------------
+		//calculates start position of kernel + randbehandlung
+		int dy = (int) (index / domainbloeckePerWidth) - widthKernel / 2;
+		int dx = index % domainbloeckePerWidth - widthKernel / 2;
+		if (dx < 0)
+			dx = 0;
+		if (dy < 0)
+			dy = 0;
+		if (dx + widthKernel >= domainbloeckePerWidth)
+			dx = domainbloeckePerWidth - widthKernel;
+		if (dy + widthKernel >= domainbloeckePerHeight)
+			dy = domainbloeckePerHeight - widthKernel;
+		
+		int[] temp = {dy, dx};
+		return temp;
+	}
 
 	/**
 	 * Applies fractal image compression to a given RasterImage.
 	 * @param input RasterImage to be processed
 	 * @return compressed RasterImage
+	 * @throws Exception 
 	 */
-	public static RasterImage encodeGrayScale(RasterImage input,DataOutputStream out) throws IOException  {
+	public static RasterImage encodeGrayScale(RasterImage input,DataOutputStream out) throws Exception  {
 		// calculate rangeblock per dimension
 		int rangebloeckePerWidth = input.width / blockgroesse;
 		int rangebloeckePerHeight = input.height / blockgroesse;
@@ -104,7 +131,6 @@ public class FractalCompression {
 		// calculate domainblock per dimension
 		int domainbloeckePerWidth = rangebloeckePerWidth * 2 - 3;
 		int domainbloeckePerHeight = rangebloeckePerHeight * 2 - 3;
-
 
 		
 		// generate codebook to read domain blocks from
@@ -119,18 +145,15 @@ public class FractalCompression {
 
 				int i = getDomainBlockIndex(x, y, rangebloeckePerWidth, rangebloeckePerHeight, domainbloeckePerWidth);
 				
-				// create domainblock kernel-------------------
-				//calculates start position of kernel + randbehandlung
-				int dy = (int) (i / domainbloeckePerWidth) - widthKernel / 2;
-				int dx = i % domainbloeckePerWidth - widthKernel / 2;
-				if (dx < 0)
-					dx = 0;
-				if (dy < 0)
-					dy = 0;
-				if (dx + widthKernel >= domainbloeckePerWidth)
-					dx = domainbloeckePerWidth - widthKernel;
-				if (dy + widthKernel >= domainbloeckePerHeight)
-					dy = domainbloeckePerHeight - widthKernel;
+				
+				int dy = 0;
+				int dx = 0;
+				
+				int[] dXdY = generateKernel(domainbloeckePerWidth, domainbloeckePerHeight, i);
+				
+				dy = dXdY[0];
+				dx = dXdY[1];
+	
 
 				//write codebuch entries into kernel array
 				Domainblock[] domainKernel = new Domainblock[widthKernel * widthKernel];
@@ -145,7 +168,6 @@ public class FractalCompression {
 						n++;
 					}
 				}
-				//---------------
 				
 				// apply algorithm based on minimum error to find best fit domain block
 				int[] rangeBlock = getRangeblock(x, y, input);
@@ -155,22 +177,7 @@ public class FractalCompression {
 				j++;
 			}
 		}
-		
-		out.writeInt(0);
-		//write out values to be read from decoder
-		out.writeInt(input.width);
-		out.writeInt(input.height);
-		out.writeInt(blockgroesse);
-		out.writeInt(widthKernel);
-
-				
-		for(int row=0;row<imageInfo.length;row++) {			
-				out.writeInt((int)(imageInfo[row][0]));
-				out.writeInt((int)(imageInfo[row][1]*100));
-				out.writeInt((int)(imageInfo[row][2]));
-		}		
-		out.close();
-	
+		writeData(out, 0, input.width, input.height);
 		return getBestGeneratedCollage(input);
 	}
 
@@ -181,8 +188,9 @@ public class FractalCompression {
 	 * 
 	 * @param input RasterImage to be processed
 	 * @return compressed RasterImage
+	 * @throws Exception 
 	 */
-	public static RasterImage encodeRGB(RasterImage input,DataOutputStream out) throws IOException  {
+	public static RasterImage encodeRGB(RasterImage input,DataOutputStream out) throws Exception  {
 		// calculate rangeblock per dimension
 		int rangebloeckePerWidth = input.width / blockgroesse;
 		int rangebloeckePerHeight = input.height / blockgroesse;
@@ -195,19 +203,6 @@ public class FractalCompression {
 		Domainblock[] codebuch = createCodebuchRGB(input);
 		RasterImage dst = new RasterImage(input.width, input.height);
 		
-		blockDatatmpRGB = new float[codebuch.length][6];
-		for(int i=0; i<codebuch.length;i++) {
-			int mittelWertR = getMittelwert(codebuch[i].argb);
-			blockDatatmpRGB[i][0] = (float)mittelWertR;
-			
-			blockDatatmpRGB[i][1] = getMittelwert(getRGB(codebuch[i].argb,0));
-			blockDatatmpRGB[i][2] = getMittelwert(getRGB(codebuch[i].argb,1));
-			blockDatatmpRGB[i][3] = getMittelwert(getRGB(codebuch[i].argb,2));
-			
-			blockDatatmpRGB[i][4] = getVarianz(getMittelwert(codebuch[i].argb),codebuch[i].argb);
-			blockDatatmpRGB[i][5] = (float) Math.sqrt(blockDatatmpRGB[i][4]);
-		}
-
 		int j = 0;
 		imageInfoRGB = new float[rangebloeckePerWidth*rangebloeckePerHeight][5];//for decoder later write to file
 		for (int y = 0; y < dst.height; y += blockgroesse) {
@@ -215,18 +210,13 @@ public class FractalCompression {
 
 				int i = getDomainBlockIndex(x, y, rangebloeckePerWidth, rangebloeckePerHeight, domainbloeckePerWidth);
 				
-				// create domainblock kernel-------------------
-				//calculates start position of kernel + randbehandlung
-				int dy = (int) (i / domainbloeckePerWidth) - widthKernel / 2;
-				int dx = i % domainbloeckePerWidth - widthKernel / 2;
-				if (dx < 0)
-					dx = 0;
-				if (dy < 0)
-					dy = 0;
-				if (dx + widthKernel >= domainbloeckePerWidth)
-					dx = domainbloeckePerWidth - widthKernel;
-				if (dy + widthKernel >= domainbloeckePerHeight)
-					dy = domainbloeckePerHeight - widthKernel;
+				int dy = 0;
+				int dx = 0;
+				
+				int[] dXdY = generateKernel(domainbloeckePerWidth, domainbloeckePerHeight, i);
+				
+				dy = dXdY[0];
+				dx = dXdY[1];
 
 				int[] indices = new int[widthKernel * widthKernel];
 				//write codebuch entries into kernel array
@@ -248,26 +238,47 @@ public class FractalCompression {
 			}
 		}
 		
-		out.writeInt(1);
+		
+		writeData(out, 1, input.width, input.height);
+		return getBestGeneratedCollageRGB(input);
+	}
+	/**
+	 * 
+	 * @param out
+	 * @param isRGB
+	 * @param width
+	 * @param height
+	 * @throws Exception
+	 */
+	public static void writeData(DataOutputStream out, int isRGB, int width, int height) throws Exception {
+		
+		out.writeInt(isRGB);
 		//write out values to be read from decoder
-		out.writeInt(input.width);
-		out.writeInt(input.height);
+		out.writeInt(width);
+		out.writeInt(height);
 		out.writeInt(blockgroesse);
 		out.writeInt(widthKernel);
-
-				
-		for(int row=0;row<imageInfoRGB.length;row++) {	
+		
+		if(isRGB == 0) {
+			for(int row=0;row<imageInfo.length;row++) {			
+				out.writeInt((int)(imageInfo[row][0]));
+				out.writeInt((int)(imageInfo[row][1]*100));
+				out.writeInt((int)(imageInfo[row][2]));
+		}
+		}
+		
+		else {
+			for(int row=0;row<imageInfoRGB.length;row++) {	
 				out.writeInt((int)(imageInfoRGB[row][0]));
 				out.writeInt((int)(imageInfoRGB[row][1]*1000000));
 				out.writeInt((int)(imageInfoRGB[row][2]*100000));
 				out.writeInt((int)(imageInfoRGB[row][3]*100000));
 				out.writeInt((int)(imageInfoRGB[row][4]));
 
-
-		}		
+			} }
+		
 		out.close();
-	
-		return getBestGeneratedCollageRGB(input);
+		
 	}
 	
 	/**
