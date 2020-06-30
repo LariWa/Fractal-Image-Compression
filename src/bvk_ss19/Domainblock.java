@@ -10,20 +10,35 @@ public class Domainblock {
     public int mittelWert;
     
     public boolean isRGB;
+    
     public int mittelWertR;
     public int mittelWertG;
     public int mittelWertB;
+    
+    public float varianceR;
+    public float varianceG;
+    public float varianceB;
+
 
 	public Domainblock(int[] argb, boolean isRGB) {
 		// creates an empty RasterImage of given size
 		this.argb = argb;
-		this.variance = setVarianz(mittelWert, argb);
-		if(!isRGB) 	this.mittelWert = setMittelwert(argb);
+		if(!isRGB) 	{
+			this.mittelWert = setMittelwert(argb);
+			this.variance = setVarianz(mittelWert, argb);
+		}
 		else {
 			this.mittelWert = setMittelwert(argb);
+			
 			this.mittelWertR = setMittelwert(extractRGB(argb,0));
+			this.varianceR = setVarianz(mittelWertR, argb);
+
 			this.mittelWertG = setMittelwert(extractRGB(argb,1));
+			this.varianceG = setVarianz(mittelWertG, argb);
+
 			this.mittelWertB= setMittelwert(extractRGB(argb,2));
+			this.varianceB = setVarianz(mittelWertB, argb);
+
 
 		}
 	}

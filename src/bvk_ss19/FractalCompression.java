@@ -733,6 +733,7 @@ public class FractalCompression {
 
 		// iterate domain blocks
 		for (int i = 0; i < domainblocks.length; i++) {
+			
 			// get Aopt and Bopt for currently visited domainblock
 			float[] ab = getErrorVarianceCovarianceRGB(domainblocks[i].argb, rangeblock, indices[i], domainblocks[i]);
 
@@ -797,11 +798,15 @@ public class FractalCompression {
 		int[] rangeG =   getRGB(range,1);
 		int[] rangeB =   getRGB(range,2);
 		
-		float domainM = domainblock.mittelWert;
-		int rangeM = getMittelwert(range);
+		int rangeRM =   getMittelwert(rangeR);
+		int rangeGM =   getMittelwert(rangeG);
+		int rangeBM =   getMittelwert(rangeB);
+		
+		//float domainM = domainblock.mittelWert;
+		//int rangeM = getMittelwert(range);
 
 		float kovarianz = 0;
-		float varianzSquare =  domainblock.variance;
+		float varianzSquare = domainblock.varianceR + domainblock.varianceG + domainblock.mittelWertB;
 		float varianzRange = 0;
 		float varianzDomain =  (float) Math.sqrt(domainblock.variance);
 
@@ -810,8 +815,8 @@ public class FractalCompression {
 		// iterate domain block
 		for (int i = 0; i < range.length; i++) {
 			// subtract average value from current value
-			float greyD = range[i] - domainM;
-			float greyR = range[i] - rangeM;
+			float greyD = (((domain[i] >> 16) & 0xff) - domainR) + (((domain[i] >> 8) & 0xff) - domainG) + ((domain[i] & 0xff) - domainB); 
+			float greyR = (((range[i] >> 16) & 0xff) - rangeRM) + (((range[i] >> 8) & 0xff) - rangeGM) + ((range[i] & 0xff) - rangeBM); 
 
 			// calculate variance, covariance
 			kovarianz += greyR * greyD;
