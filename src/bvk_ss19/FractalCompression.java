@@ -55,9 +55,9 @@ public class FractalCompression {
 	 * @param out
 	 * @throws Exception 
 	 */
-	public static void encode(RasterImage input,DataOutputStream out) throws Exception  {
-		if(isGreyScale(input)) encodeGrayScale(input,out);
-		else encodeRGB(input,out);
+	public static RasterImage encode(RasterImage input,DataOutputStream out) throws Exception  {
+		if(isGreyScale(input)) return encodeGrayScale(input,out);
+		else return encodeRGB(input,out);
 	}
 			
 	/**
@@ -75,7 +75,7 @@ public class FractalCompression {
 	}
 
 	/**
-	 * 		
+	 * Calculates variance.	
 	 * @param mittelWert
 	 * @param block
 	 * @return
@@ -92,7 +92,7 @@ public class FractalCompression {
 	}
 			
 	/**
-	 * 
+	 * Generates a Kernel of a given size to scan domain blocks from
 	 * @param domainbloeckePerWidth
 	 * @param domainbloeckePerHeight
 	 * @param index
@@ -123,7 +123,7 @@ public class FractalCompression {
 	 * @return compressed RasterImage
 	 * @throws Exception 
 	 */
-	public static void encodeGrayScale(RasterImage input,DataOutputStream out) throws Exception  {
+	public static RasterImage encodeGrayScale(RasterImage input,DataOutputStream out) throws Exception  {
 		// calculate rangeblock per dimension
 		int rangebloeckePerWidth = input.width / blockgroesse;
 		int rangebloeckePerHeight = input.height / blockgroesse;
@@ -178,6 +178,7 @@ public class FractalCompression {
 			}
 		}
 		writeData(out, 0, input.width, input.height);
+		return getBestGeneratedCollage(input);
 	}
 
 
@@ -189,7 +190,7 @@ public class FractalCompression {
 	 * @return compressed RasterImage
 	 * @throws Exception 
 	 */
-	public static void encodeRGB(RasterImage input,DataOutputStream out) throws Exception  {
+	public static RasterImage encodeRGB(RasterImage input,DataOutputStream out) throws Exception  {
 		// calculate rangeblock per dimension
 		int rangebloeckePerWidth = input.width / blockgroesse;
 		int rangebloeckePerHeight = input.height / blockgroesse;
@@ -239,6 +240,7 @@ public class FractalCompression {
 		
 		
 		writeData(out, 1, input.width, input.height);
+		return getBestGeneratedCollageRGB(input);
 	}
 	/**
 	 * 
@@ -326,31 +328,30 @@ public class FractalCompression {
 	 */
 	public static RasterImage getBestGeneratedCollageRGB(RasterImage originalImage) {
 		
-		RasterImage collage = new RasterImage(originalImage.width, originalImage.height);
 		
-		calculateIndices(imageInfoRGB, originalImage.width, originalImage.height, blockgroesse, widthKernel);
-
-		// make iterations for image reconstruction
-		for (int counter = 0; counter < 50; counter++) {
-			Domainblock[] codebuch = createCodebuchRGB(originalImage); // get codebook
-			int i = 0;
+		float[][] tmp = imageInfoRGB;
+		RasterImage collage = new RasterImage(originalImage.width, originalImage.height);
+		calculateIndices(tmp, collage.width, collage.height, blockgroesse, widthKernel);
+		
+		Domainblock[] codebuch = createCodebuchRGB(collage); // get codebook
+		int i = 0;
 
 			// iterate image per rangeblock
-			for (int y = 0; y < originalImage.height; y += blockgroesse) {
-				for (int x = 0; x < originalImage.width; x += blockgroesse) {
+			for (int y = 0; y < collage.height; y += blockgroesse) {
+				for (int x = 0; x < collage.width; x += blockgroesse) {
 					// iterate rangeblock
-					for (int ry = 0; ry < blockgroesse && y + ry < originalImage.height; ry++) {
-						for (int rx = 0; rx < blockgroesse && x + rx < originalImage.width; rx++) {
+					for (int ry = 0; ry < blockgroesse && y + ry < collage.height; ry++) {
+						for (int rx = 0; rx < blockgroesse && x + rx < collage.width; rx++) {
 							
 							// get current value of best fit domainblock pixel
-							int domain = codebuch[(int) imageInfoRGB[i][0]].argb[rx + ry * blockgroesse];
+							int domain = codebuch[(int) tmp[i][0]].argb[rx + ry * blockgroesse];
 							int domainR = (domain >> 16) & 0xff;
 							int domainG = (domain >> 8) & 0xff;
 							int domainB = domain & 0xff;
 							
-							int valueR = (int) (imageInfoRGB[i][1] * domainR + imageInfoRGB[i][2]);
-							int valueG = (int) (imageInfoRGB[i][1] * domainG + imageInfoRGB[i][3]);
-							int valueB = (int) (imageInfoRGB[i][1] * domainB + imageInfoRGB[i][4]);
+							int valueR = (int) (tmp[i][1] * domainR + tmp[i][2]);
+							int valueG = (int) (tmp[i][1] * domainG + tmp[i][3]);
+							int valueB = (int) (tmp[i][1] * domainB + tmp[i][4]);
 
 							
 							// apply thresshold
@@ -364,10 +365,8 @@ public class FractalCompression {
 					i++;
 				}
 			}
-		}
 		return collage;	
-
-		
+	
 	}
 	
 	
@@ -592,7 +591,6 @@ public class FractalCompression {
 		for (int ry = 0; ry < blockgroesse && y + ry < image.height; ry++) {
 			for (int rx = 0; rx < blockgroesse && x + rx < image.width; rx++) {
 				int value = image.argb[(x + rx) + (y + ry) * image.width];
-				//value = (value >> 16) & 0xff; für grauwert
 				rangeblock[i] = value;
 				i++;
 			}
@@ -808,7 +806,6 @@ public class FractalCompression {
 
 			// calculate variance, covariance
 			kovarianz += greyR * greyD;
-			//varianzSquare += greyD * greyD;
 			varianzRange += greyR;
 			varianzDomain += greyD;
 		}
@@ -816,7 +813,6 @@ public class FractalCompression {
 		float r = 0;
 		float error = 0;
 
-		//System.out.println(varianzSquare);
 		if(varianzRange == 0 || varianzDomain == 0) r = 0;
 		else r = kovarianz / (varianzRange * varianzDomain);
 
@@ -838,7 +834,6 @@ public class FractalCompression {
 		if(canal == 0) {
 			for(int i=0; i<argbBytes.length;i++) {
 				temp[i] = (argbBytes[i] >> 16) & 0xff;
-				//System.out.println(i + "   R  " + temp[i]);
 			}
 		}
 		
@@ -846,8 +841,6 @@ public class FractalCompression {
 		else if(canal == 1) {
 			for(int i=0; i<argbBytes.length;i++) {
 				temp[i] = (argbBytes[i] >> 8) & 0xff;
-				//System.out.println(i + "   G  " + temp[i]);
-
 			}
 		}
 		
@@ -855,8 +848,6 @@ public class FractalCompression {
 		else if(canal == 2) {
 			for(int i=0; i<argbBytes.length;i++) {
 				temp[i] = argbBytes[i]  & 0xff;
-				//System.out.println(i + "   B  " + temp[i]);
-
 			}
 		}
 		
