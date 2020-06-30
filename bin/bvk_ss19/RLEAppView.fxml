@@ -101,7 +101,7 @@
             <VBox prefHeight="50.0" prefWidth="100.0" GridPane.columnIndex="1" GridPane.rowIndex="3">
                <children>
                   <Label text="Search width" />
-                  <Slider fx:id="searchWidth" blockIncrement="1.0" majorTickUnit="1.0" max="5.0" min="1.0" minorTickCount="0" showTickLabels="true" showTickMarks="true" snapToTicks="true" />
+                  <Slider fx:id="searchWidth" blockIncrement="1.0" majorTickUnit="1.0" max="4.0" min="1.0" minorTickCount="0" showTickLabels="true" showTickMarks="true" snapToTicks="true" />
                </children>
             </VBox>           
          </children>

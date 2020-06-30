@@ -31,15 +31,13 @@ public class Domainblock {
 			this.mittelWert = setMittelwert(argb);
 			
 			this.mittelWertR = setMittelwert(extractRGB(argb,0));
-			this.varianceR = setVarianz(mittelWertR, argb);
+			this.varianceR = setVarianz(mittelWertR, extractRGB(argb,0));
 
 			this.mittelWertG = setMittelwert(extractRGB(argb,1));
-			this.varianceG = setVarianz(mittelWertG, argb);
+			this.varianceG = setVarianz(mittelWertG, extractRGB(argb,1));
 
 			this.mittelWertB= setMittelwert(extractRGB(argb,2));
-			this.varianceB = setVarianz(mittelWertB, argb);
-
-
+			this.varianceB = setVarianz(mittelWertB, extractRGB(argb,2));
 		}
 	}
 	

@@ -80,7 +80,6 @@ public class RLEAppController {
             if (n <= 2) return "4";
             if (n <= 3) return "8";
             if (n <= 4) return "16";
-            if (n <= 5) return "32";
 
 
 
