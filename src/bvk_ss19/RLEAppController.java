@@ -174,8 +174,8 @@ public class RLEAppController {
 		
 		try {
 			DataOutputStream ouputStream = new DataOutputStream(new FileOutputStream("unknown.run"));
-			RasterImage encoded = FractalCompression.encode(sourceImage, ouputStream);
-			encoded.setToView(bestFitCollage);
+			FractalCompression.encode(sourceImage, ouputStream);
+			FractalCompression.getBestGeneratedCollage(sourceImage).setToView(bestFitCollage);
 		}
 		 catch (Exception e) {
  			e.printStackTrace();
