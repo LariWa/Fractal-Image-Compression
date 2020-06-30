@@ -45,6 +45,7 @@ public class FractalCompression {
 	}
 
 	/**
+	 * Encode input image depending if its grayscale or colored.
 	 * 
 	 * @param input
 	 * @param out
@@ -71,22 +72,6 @@ public class FractalCompression {
 		return sum / values.length;
 	}
 
-	/**
-	 * Calculates variance.
-	 * 
-	 * @param mittelWert
-	 * @param block
-	 * @return
-	 */
-	public static float getVarianz(int mittelWert, int[] block) {
-		float varianzDomain = 0;
-		for (int i = 0; i < block.length; i++) {
-			// subtract average value from current value
-			float greyD = block[i] - mittelWert;
-			varianzDomain += greyD * greyD;
-		}
-		return varianzDomain;
-	}
 
 	/**
 	 * Generates a Kernel of a given size to scan for best matching domain blocks
@@ -115,7 +100,7 @@ public class FractalCompression {
 	}
 
 	/**
-	 * Applies fractal image compression to a given RasterImage.
+	 * Applies fractal image compression to a given grayscale RasterImage.
 	 * 
 	 * @param input RasterImage to be processed
 	 * @return compressed RasterImage
@@ -177,7 +162,7 @@ public class FractalCompression {
 	}
 
 	/**
-	 * Applies fractal image compression to a given RasterImage.
+	 * Applies fractal image compression to a given color RasterImage.
 	 * 
 	 * @param input RasterImage to be processed
 	 * @return compressed RasterImage
@@ -234,7 +219,7 @@ public class FractalCompression {
 	}
 
 	/**
-	 * writes data into output stream (for Encoder)
+	 * Writes data into output stream.
 	 * 
 	 * @param out
 	 * @param isRGB
@@ -276,7 +261,7 @@ public class FractalCompression {
 	}
 
 	/**
-	 * gets the collage of the encoded picture
+	 * Gets the collage of the encoded picture.
 	 * 
 	 * @param originalImage
 	 * @return
@@ -362,7 +347,7 @@ public class FractalCompression {
 	}
 
 	/**
-	 * decodes an grey Images
+	 * decodes a grey image from an input stream
 	 * 
 	 * @param inputStream
 	 * @return
@@ -436,7 +421,7 @@ public class FractalCompression {
 	}
 
 	/**
-	 * decodes colored picture
+	 * decodes colored picture from an inputstream
 	 * 
 	 * @param inputStream
 	 * @return
@@ -659,7 +644,7 @@ public class FractalCompression {
 	}
 
 	/**
-	 * Calculates a and b luminence factors
+	 * Calculates error, variance and kovariance.
 	 * 
 	 * @param domain
 	 * @param range
@@ -702,7 +687,6 @@ public class FractalCompression {
 	/**
 	 * finds the best matching domainblock for the given rangeblock out of a given
 	 * array of domainblocks for a colored picture
-	 * 
 	 * 
 	 * @param domainblocks
 	 * @param rangeblock
