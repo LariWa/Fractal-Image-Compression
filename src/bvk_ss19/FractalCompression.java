@@ -415,7 +415,7 @@ public class FractalCompression {
 				break; // stop iterations when error drops below 1
 			if (counter != 49)
 				avgError = 0;
-		} // pixel
+		} 
 
 		return image;
 	}
@@ -604,10 +604,10 @@ public class FractalCompression {
 	/**
 	 * finds the best matching domainblock for the given rangeblock out of a given
 	 * array of domainblocks for a grey picture
-	 * 
-	 * 
 	 * @param domainblocks
 	 * @param rangeblock
+	 * @param indices
+	 * @param mittelWertRangeblock
 	 * @return
 	 */
 	private static float[] getBestDomainblock(Domainblock[] domainblocks, int[] rangeblock, int[] indices,
@@ -644,10 +644,12 @@ public class FractalCompression {
 	}
 
 	/**
-	 * Calculates error, variance and kovariance.
-	 * 
-	 * @param domain
+	 * Calculates error, variance and kovariance. 
+	 * @param codeBuchIndex
 	 * @param range
+	 * @param rangeMittelwert
+	 * @param domain
+	 * @param domainblock
 	 * @return
 	 */
 	private static float[] getErrorVarianceCovariance(int codeBuchIndex, int[] range, int rangeMittelwert, int[] domain,
@@ -687,9 +689,9 @@ public class FractalCompression {
 	/**
 	 * finds the best matching domainblock for the given rangeblock out of a given
 	 * array of domainblocks for a colored picture
-	 * 
 	 * @param domainblocks
 	 * @param rangeblock
+	 * @param indices
 	 * @return
 	 */
 	private static float[] getBestDomainblockRGB(Domainblock[] domainblocks, int[] rangeblock, int[] indices) {
@@ -733,7 +735,7 @@ public class FractalCompression {
 	}
 
 	/**
-	 * appies Threshold, so that the color value can only be between 0 and 255
+	 * applies Threshold, so that the color value can only be between 0 and 255
 	 * 
 	 * @param pixelValue
 	 * @return
@@ -747,10 +749,12 @@ public class FractalCompression {
 	}
 
 	/**
-	 * Calculates a and b luminence factors
+	 * Calculates error, variance and kovariance for colored picture 
 	 * 
 	 * @param domain
 	 * @param range
+	 * @param index
+	 * @param domainblock
 	 * @return
 	 */
 	private static float[] getErrorVarianceCovarianceRGB(int[] domain, int[] range, int index,
@@ -839,8 +843,11 @@ public class FractalCompression {
 
 	/**
 	 * calculates the indices from the domain-Kernel to the codebook index
-	 * 
-	 * @param width, height of image
+	 * @param imgData
+	 * @param width
+	 * @param height
+	 * @param blockgroesse
+	 * @param widthKernel
 	 * @return
 	 */
 	private static float[][] calculateIndices(float[][] imgData, int width, int height, int blockgroesse,
@@ -886,7 +893,7 @@ public class FractalCompression {
 	}
 
 	/**
-	 * Gets a RasterImage and scales it down by factor 2.
+	 * Gets a colored  RasterImage and scales it down by factor 2.
 	 * 
 	 * @param image RasterImage to be processed
 	 * @return scaled RasterImage
@@ -955,7 +962,7 @@ public class FractalCompression {
 	}
 
 	/**
-	 * Gets a RasterImage and scales it down by factor 2.
+	 * Gets a grey RasterImage and scales it down by factor 2.
 	 * 
 	 * @param image RasterImage to be processed
 	 * @return scaled RasterImage
@@ -1000,7 +1007,7 @@ public class FractalCompression {
 	}
 
 	/**
-	 * Gets an RasterImage and returns a 2D of array containing a codebook
+	 * Gets a grey RasterImage and returns a 2D of array containing a codebook
 	 * 
 	 * @param image RasterImage to be processed
 	 * @return codebook array
@@ -1043,7 +1050,7 @@ public class FractalCompression {
 	}
 
 	/**
-	 * Gets an RasterImage and returns a 2D of array containing a codebook
+	 * Gets a colored RasterImage and returns a 2D of array containing a codebook
 	 * 
 	 * @param image RasterImage to be processed
 	 * @return codebook array
