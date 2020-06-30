@@ -172,19 +172,26 @@ public class RLEAppController {
 	@FXML
 	public void openDecodedImage() {
 		
-		try {
-			DataOutputStream ouputStream = new DataOutputStream(new FileOutputStream("unknown.run"));
-			FractalCompression.encode(sourceImage, ouputStream);
-			FractalCompression.getBestGeneratedCollage(sourceImage).setToView(bestFitCollage);
-		}
-		 catch (Exception e) {
- 			e.printStackTrace();
- 		}
+//		try {
+//			DataOutputStream ouputStream = new DataOutputStream(new FileOutputStream("unknown.run"));
+//			FractalCompression.encode(sourceImage, ouputStream);
+//			FractalCompression.getBestGeneratedCollage(sourceImage).setToView(bestFitCollage);
+//		}
+//		 catch (Exception e) {
+// 			e.printStackTrace();
+// 		}
 		
 		try {
+			RasterImage tmp = sourceImage;
+			DataOutputStream ouputStream = new DataOutputStream(new FileOutputStream("unknown.run"));
+			FractalCompression.encode(sourceImage, ouputStream);
+			
+			FractalCompression.getBestGeneratedCollage(sourceImage).setToView(bestFitCollage);
+
 			DataInputStream inputStream = new DataInputStream(new FileInputStream("unknown.run"));
 			FractalCompression.decode(inputStream).setToView(decodedImageView);
 			mse.setText("MSE " + FractalCompression.getAvgError());
+			sourceImage = tmp;
 		}
 		catch (Exception e) {
 	 			e.printStackTrace();
